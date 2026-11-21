@@ -6,6 +6,7 @@ import { createQuestionStream } from '../src/lib/session.js';
 import { toSpeech } from '../src/lib/audio.js';
 import { THEMED } from '../src/curriculum/middleEarth.js';
 import { auditLevels } from './level-audit-lib.mjs';
+import { auditLadder } from './ladder-audit-lib.mjs';
 
 const MODES = ['flash', 'worksheet', 'story', 'stem'];
 let failures = 0;
@@ -92,6 +93,14 @@ for (const [g, q, want] of cases) { total++; if (checkAnswer(g, q) !== want) fai
   const { weak, compared } = auditLevels({ N: 800 });
   total += compared;
   for (const w of weak) fail(`levels too alike ${w.age}/${w.topic}/${w.mode}${w.themed ? '/themed' : ''} ${w.pair}`, w);
+}
+
+// Levels must also rise from age to age: a topic's levels climb inside an age, and an older age never
+// tops out below a younger one. (Run `node scripts/audit-ladder.mjs --show` to read samples when this fails.)
+{
+  const { findings } = auditLadder({ N: 400 });
+  total += findings.length + 1;
+  for (const f of findings) fail(`ladder ${f.kind} ${f.fam} age ${f.age}: ${f.detail}`, f);
 }
 
 if (failures) console.error(kinds);
