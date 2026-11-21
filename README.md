@@ -23,6 +23,13 @@ The build uses relative asset paths (`base: './'`), so it works at `https://<use
 without any configuration. On the iPad, open the site in Safari → Share → **Add to Home Screen**
 for a full-screen app.
 
+## Offline use
+
+The build is a single self-contained `index.html` (all JS and CSS inlined), so it also runs
+straight from a file on disk. The Desktop shortcut saves a copy of the live site to
+`offline/` each time it opens online, and opens that copy when the internet is down.
+Progress saved in the offline copy is kept separately from the online site's progress.
+
 ## Data
 
 Progress is stored in the browser's `localStorage` on each device (key `lumen.sessions.v1`).
