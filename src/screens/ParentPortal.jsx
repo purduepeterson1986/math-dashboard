@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, LayoutDashboard, History, Award, Settings, Download, Upload, Trash2, CheckCircle2, TrendingUp,
-  AlertCircle, Circle, Crosshair, ChevronDown, Check, X, KeyRound, Volume2, Mic, User, Lightbulb, Mountain,
+  AlertCircle, Circle, Crosshair, ChevronDown, Check, X, KeyRound, Volume2, Mic, User, Lightbulb, Mountain, Users, Plus,
 } from 'lucide-react';
 import ModeIcon from '../components/ModeIcon.jsx';
 import Modal from '../components/Modal.jsx';
@@ -9,7 +9,7 @@ import Summary from './Summary.jsx';
 import { MathText } from '../components/Visual.jsx';
 import { CURRICULA, MODES, AGE_META, getCurriculum, modeById } from '../curriculum/index.js';
 import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats, levelStats } from '../lib/diagnostics.js';
-import { exportData, importData } from '../lib/storage.js';
+import { AVATARS, displayName } from '../lib/profiles.js';
 import { topicsForMode } from '../lib/session.js';
 
 const TABS = [
@@ -367,7 +367,57 @@ function HistoryTab({ sessions, ageFilter, onDelete, onOpen }) {
 }
 
 /* ------------------------------ Settings ------------------------------ */
-function SettingsTab({ settings, sessions, onSettings, onSessions }) {
+function ChildrenCard({ profiles, activeId, sessionsFor, onSwitch, onAdd, onUpdate, onRemove }) {
+  const [del, setDel] = useState(null);
+  const [pick, setPick] = useState(null); // id of the child whose picture is being chosen
+  return (
+    <Card title="Children" icon={<Users size={20} className="text-brand-600" />} className="lg:col-span-2"
+      right={<button type="button" onClick={() => { const id = onAdd(); onSwitch(id); }} className="press min-h-11 px-4 rounded-2xl bg-brand-600 text-white font-extrabold flex items-center gap-2"><Plus size={18} /> Add a child</button>}>
+      <p className="text-ink-soft font-semibold mb-3">Each child has their own age, levels and progress. Sound, read-aloud, Middle-earth and the PIN are shared. With two or more children the app asks “Who’s learning today?” when it opens and after 15 quiet minutes.</p>
+      <ul className="divide-y divide-line">
+        {profiles.map((p, i) => {
+          const list = sessionsFor(p.id);
+          const last = list[0];
+          return (
+            <li key={p.id} className="py-3 flex flex-wrap items-center gap-3">
+              <button type="button" aria-label={`Choose a picture for ${displayName(p, i)}`} onClick={() => setPick(p.id)}
+                className="press w-14 h-14 rounded-2xl bg-brand-50 text-4xl flex items-center justify-center">{p.avatar}</button>
+              <input value={p.name} maxLength={24} onChange={(e) => onUpdate(p.id, { name: e.target.value })} aria-label={`Name for child ${i + 1}`} placeholder={`Child ${i + 1}`}
+                className="flex-1 min-w-[9rem] h-12 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" />
+              <label className="text-xs font-extrabold text-ink-muted flex flex-col gap-0.5">Age
+                <select value={p.age} onChange={(e) => onUpdate(p.id, { age: Number(e.target.value) })} aria-label={`Age for ${displayName(p, i)}`}
+                  className="h-12 rounded-2xl border-2 border-line bg-white px-3 text-base font-bold text-ink focus:border-brand-500 outline-none">
+                  {Object.keys(AGE_META).map(Number).sort((a, b) => a - b).map((a) => <option key={a} value={a}>{a}{CURRICULA[a] ? '' : ' (coming soon)'}</option>)}
+                </select>
+              </label>
+              <div className="text-xs font-bold text-ink-muted w-28">{list.length} session{list.length === 1 ? '' : 's'}<br />{last ? `Last: ${fmtDate(last.startedAt)}` : 'Not started yet'}</div>
+              {p.id === activeId ? <span className="px-3 min-h-11 rounded-xl bg-good-soft text-good font-extrabold flex items-center">Viewing</span>
+                : <button type="button" onClick={() => onSwitch(p.id)} className="press min-h-11 px-4 rounded-xl bg-slate-100 font-extrabold">View</button>}
+              {profiles.length > 1 && <button type="button" onClick={() => setDel(p)} aria-label={`Remove ${displayName(p, i)}`} className="press w-11 h-11 rounded-xl bg-bad-soft text-bad flex items-center justify-center"><Trash2 size={18} /></button>}
+            </li>
+          );
+        })}
+      </ul>
+      <Modal open={!!pick} onClose={() => setPick(null)} title="Choose a picture" actions={[{ label: 'Done', onClick: () => setPick(null), primary: true }]}>
+        <div className="grid grid-cols-5 gap-2">
+          {AVATARS.map((a) => {
+            const on = profiles.find((p) => p.id === pick)?.avatar === a;
+            return (
+              <button key={a} type="button" aria-pressed={on} aria-label={`Picture ${a}`} onClick={() => { onUpdate(pick, { avatar: a }); setPick(null); }}
+                className={`press h-16 rounded-2xl border-2 text-4xl flex items-center justify-center ${on ? 'border-brand-500 bg-brand-50' : 'border-line bg-white'}`}>{a}</button>
+            );
+          })}
+        </div>
+      </Modal>
+      <Modal open={!!del} onClose={() => setDel(null)} title={`Remove ${del ? displayName(del, profiles.indexOf(del)) : ''}?`}
+        actions={[{ label: 'Cancel', onClick: () => setDel(null) }, { label: 'Remove child and progress', tone: 'bad', onClick: () => { onRemove(del.id); setDel(null); } }]}>
+        This permanently deletes this child’s profile and all {del ? sessionsFor(del.id).length : 0} of their saved sessions on this device. It can’t be undone unless you have an exported backup.
+      </Modal>
+    </Card>
+  );
+}
+
+function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
   const [pin1, setPin1] = useState('');
   const [msg, setMsg] = useState('');
   const [clear, setClear] = useState(false);
@@ -381,11 +431,9 @@ function SettingsTab({ settings, sessions, onSettings, onSessions }) {
   );
   return (
     <div className="grid lg:grid-cols-2 gap-4">
-      <Card title="Student" icon={<User size={20} className="text-brand-600" />}>
-        <label className="block text-sm font-extrabold text-ink-soft mb-1" htmlFor="sname">Name shown on the home screen</label>
-        <input id="sname" value={settings.studentName} maxLength={24} onChange={(e) => onSettings({ studentName: e.target.value })}
-          className="w-full h-14 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" placeholder="e.g. Mary" />
-        <div className="mt-4 divide-y divide-line">
+      {family.profiles.length > 0 && <ChildrenCard {...family} />}
+      <Card title="Settings for all children" icon={<User size={20} className="text-brand-600" />}>
+        <div className="divide-y divide-line">
           <Toggle on={settings.sound} onClick={() => onSettings({ sound: !settings.sound })} icon={<Volume2 size={20} />} label="Sound effects" desc="Taps, correct/incorrect chimes, celebrations" />
           <Toggle on={settings.voice} onClick={() => onSettings({ voice: !settings.voice })} icon={<Mic size={20} />} label="Read aloud (Ages 3–6)" desc="Speaks each question for pre-readers" />
           <Toggle on={settings.middleEarth !== false} onClick={() => onSettings({ middleEarth: settings.middleEarth === false })} icon={<Mountain size={20} />} label="Middle-earth questions" desc="Mixes Lord of the Rings characters and stories into the questions" />
@@ -405,29 +453,30 @@ function SettingsTab({ settings, sessions, onSettings, onSessions }) {
         {msg && <p className="mt-2 text-good font-bold">{msg}</p>}
       </Card>
       <Card title="Backup & data" icon={<Download size={20} className="text-brand-600" />} className="lg:col-span-2">
-        <p className="text-ink-soft font-semibold mb-3">Progress is saved in this browser on this device ({sessions.length} sessions). Export a JSON backup regularly, especially before clearing Safari data.</p>
+        <p className="text-ink-soft font-semibold mb-3">Progress for every child is saved in this browser on this device. Export a JSON backup regularly, especially before clearing Safari data.</p>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => exportData(sessions, settings)} className="press min-h-12 px-5 rounded-2xl bg-brand-600 text-white font-extrabold flex items-center gap-2"><Download size={18} /> Export JSON backup</button>
+          <button type="button" onClick={family.onExportAll} className="press min-h-12 px-5 rounded-2xl bg-brand-600 text-white font-extrabold flex items-center gap-2"><Download size={18} /> Export JSON backup</button>
           <button type="button" onClick={() => file.current?.click()} className="press min-h-12 px-5 rounded-2xl bg-brand-50 text-brand-700 font-extrabold flex items-center gap-2"><Upload size={18} /> Import backup</button>
           <input ref={file} type="file" accept="application/json,.json" className="hidden" onChange={async (e) => {
             const f = e.target.files?.[0]; e.target.value = '';
             if (!f) return;
-            try { const { merged, added } = await importData(f, sessions); onSessions(merged); setMsg(`Imported ${added} new session${added === 1 ? '' : 's'}.`); }
+            try { setMsg(await family.onImportAll(f)); }
             catch (err) { setMsg(`Import failed: ${err.message}`); }
           }} />
-          <button type="button" onClick={() => setClear(true)} className="press min-h-12 px-5 rounded-2xl bg-bad-soft text-bad font-extrabold flex items-center gap-2 ml-auto"><Trash2 size={18} /> Clear all progress</button>
+          <button type="button" onClick={() => setClear(true)} className="press min-h-12 px-5 rounded-2xl bg-bad-soft text-bad font-extrabold flex items-center gap-2 ml-auto"><Trash2 size={18} /> Clear this child’s progress</button>
         </div>
       </Card>
-      <Modal open={clear} onClose={() => setClear(false)} title="Clear all progress?"
-        actions={[{ label: 'Cancel', onClick: () => setClear(false) }, { label: 'Delete everything', tone: 'bad', onClick: () => { onSessions([]); setClear(false); setMsg('All sessions deleted.'); } }]}>
-        This permanently deletes all {sessions.length} saved sessions on this device. It can’t be undone unless you have an exported backup.
+      <Modal open={clear} onClose={() => setClear(false)} title="Clear this child’s progress?"
+        actions={[{ label: 'Cancel', onClick: () => setClear(false) }, { label: 'Delete everything', tone: 'bad', onClick: () => { onSessions([]); setClear(false); setMsg('Sessions deleted.'); } }]}>
+        This permanently deletes all {sessions.length} saved sessions for {settings.studentName || 'this child'}. It can’t be undone unless you have an exported backup.
       </Modal>
     </div>
   );
 }
 
 /* ------------------------------ Portal ------------------------------ */
-export default function ParentPortal({ sessions, settings, onSettings, onSessions, onExit, onLaunch }) {
+export default function ParentPortal({ sessions, settings, onSettings, onSessions, onExit, onLaunch, profiles = [], activeId, sessionsFor = () => [], onSwitchChild, onAddChild, onUpdateChild, onRemoveChild, onExportAll, onImportAll }) {
+  const family = { profiles, activeId, sessionsFor, onSwitch: onSwitchChild, onAdd: onAddChild, onUpdate: onUpdateChild, onRemove: onRemoveChild, onExportAll, onImportAll };
   const [tab, setTab] = useState('overview');
   const ages = useMemo(() => [...new Set([...Object.keys(CURRICULA).map(Number), ...sessions.map((s) => s.age)])].sort((a, b) => a - b), [sessions]);
   const [ageFilter, setAgeFilter] = useState('all');
@@ -449,6 +498,16 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
           </div>
         </div>
 
+        {profiles.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-2" role="group" aria-label="Choose a child">
+            {profiles.map((p, i) => (
+              <button key={p.id} type="button" onClick={() => { if (p.id !== activeId) { setReview(null); onSwitchChild(p.id); } }} aria-pressed={p.id === activeId}
+                className={`press shrink-0 min-h-12 pl-2 pr-4 rounded-full border-2 font-extrabold flex items-center gap-2 ${p.id === activeId ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft'}`}>
+                <span className="text-2xl leading-none" aria-hidden="true">{p.avatar}</span>{displayName(p, i)}
+              </button>
+            ))}
+          </div>
+        )}
         <nav className="flex gap-2 overflow-x-auto pb-2 mb-3" aria-label="Portal sections">
           {TABS.map((t) => (
             <button key={t.id} type="button" onClick={() => setTab(t.id)} aria-current={tab === t.id ? 'page' : undefined}
@@ -473,7 +532,7 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
         {tab === 'overview' && <Overview sessions={sessions} ageFilter={ageFilter} onLaunch={launch} onOpen={setReview} />}
         {tab === 'mastery' && <Mastery sessions={sessions} age={masteryAge} onLaunch={launch} />}
         {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onOpen={setReview} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} />}
-        {tab === 'settings' && <SettingsTab settings={settings} sessions={sessions} onSettings={onSettings} onSessions={onSessions} />}
+        {tab === 'settings' && <SettingsTab settings={settings} sessions={sessions} onSettings={onSettings} onSessions={onSessions} family={family} />}
       </div>
     </div>
   );

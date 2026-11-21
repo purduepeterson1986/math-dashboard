@@ -1,15 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Header from './components/Header.jsx';
 import Home from './screens/Home.jsx';
 import SetupSheet from './screens/SetupSheet.jsx';
 import Summary from './screens/Summary.jsx';
 import ParentGate from './screens/ParentGate.jsx';
 import ParentPortal from './screens/ParentPortal.jsx';
+import WhoIsLearning from './screens/WhoIsLearning.jsx';
 import FlashCards from './modes/FlashCards.jsx';
 import Worksheet from './modes/Worksheet.jsx';
 import Runner from './modes/Runner.jsx';
 import { getCurriculum } from './curriculum/index.js';
-import { loadSettings, saveSettings, loadSessions, saveSessions } from './lib/storage.js';
+import { loadSettings, saveSettings } from './lib/storage.js';
+import {
+  loadProfiles, saveProfiles, loadProfileSessions, saveProfileSessions, deleteProfileSessions, newProfile,
+  mergeSessions, exportFamily, readBackup, IDLE_MS, displayName,
+} from './lib/profiles.js';
 import { setSoundEnabled, setVoiceEnabled, unlockAudio, audioReady, stopSpeaking } from './lib/audio.js';
 import { starsFor, practiceStreakDays } from './lib/diagnostics.js';
 import { topicsForMode } from './lib/session.js';
@@ -17,13 +22,53 @@ import { uid } from './lib/rng.js';
 import { setMiddleEarth } from './curriculum/middleEarth.js';
 
 export default function App() {
-  const [settings, setSettings] = useState(loadSettings);
-  const [sessions, setSessions] = useState(loadSessions);
+  // Shared by every child: sound, read-aloud, Middle-earth, parent PIN
+  const [shared, setShared] = useState(() => { const { age, filters, studentName, ...rest } = loadSettings(); return rest; }); // eslint-disable-line no-unused-vars
+  const [profiles, setProfiles] = useState(loadProfiles);
+  // With one child the app opens straight to them; with several it asks "Who's learning?"
+  const [activeId, setActiveId] = useState(() => (profiles.length === 1 ? profiles[0].id : null));
+  const [sessions, setSessions] = useState(() => (activeId ? loadProfileSessions(activeId) : []));
   const [view, setView] = useState({ name: 'home' });
   const [setupMode, setSetupMode] = useState(null);
+  const [pickerGate, setPickerGate] = useState(false);
+  // A child may browse other grade levels, but that never changes their default (the parent sets that in the portal)
+  const [tryAge, setTryAge] = useState(null);
 
-  useEffect(() => { saveSettings(settings); setSoundEnabled(settings.sound); setVoiceEnabled(settings.voice); setMiddleEarth(settings.middleEarth !== false); }, [settings]);
-  useEffect(() => { saveSessions(sessions); }, [sessions]);
+  const active = profiles.find((p) => p.id === activeId) || null;
+  const activeIndex = Math.max(0, profiles.findIndex((p) => p.id === activeId));
+  const multi = profiles.length > 1;
+  // What the rest of the app sees: shared settings plus the active child's own age, filters and name
+  const settings = useMemo(() => ({ ...shared, age: active?.age ?? 3, filters: active?.filters || {}, studentName: active?.name || '' }), [shared, active]);
+
+  useEffect(() => { saveSettings(shared); setSoundEnabled(shared.sound); setVoiceEnabled(shared.voice); setMiddleEarth(shared.middleEarth !== false); }, [shared]);
+  useEffect(() => { saveProfiles(profiles); }, [profiles]);
+  useEffect(() => { if (activeId) saveProfileSessions(activeId, sessions); }, [sessions, activeId]);
+
+  const updateProfile = useCallback((id, patch) => setProfiles((list) => list.map((p) => (p.id === id ? { ...p, ...(typeof patch === 'function' ? patch(p) : patch) } : p))), []);
+  const activate = (id) => { setTryAge(null); setSessions(loadProfileSessions(id)); setActiveId(id); setSetupMode(null); setView({ name: 'home' }); };
+  const selectChild = (id) => { setTryAge(null); setSessions(loadProfileSessions(id)); setActiveId(id); }; // parent switching: stay where you are
+  const switchChild = () => { setTryAge(null); setSetupMode(null); setView({ name: 'home' }); setActiveId(null); };
+
+  // Back to "Who's learning?" after a quiet spell, so a sibling never works on the wrong profile.
+  // Never in the middle of a lesson or while a parent is in the portal.
+  const live = useRef({});
+  live.current = { multi, activeId, screen: view.name };
+  const lastTouch = useRef(Date.now());
+  useEffect(() => {
+    const bump = () => { lastTouch.current = Date.now(); };
+    const evts = ['pointerdown', 'touchstart', 'keydown'];
+    evts.forEach((e) => window.addEventListener(e, bump, true));
+    const check = () => {
+      const l = live.current;
+      if (l.multi && l.activeId && (l.screen === 'home' || l.screen === 'summary') && Date.now() - lastTouch.current > IDLE_MS) {
+        setTryAge(null); setSetupMode(null); setView({ name: 'home' }); setActiveId(null);
+      }
+    };
+    const onVis = () => { if (!document.hidden) check(); };
+    const t = setInterval(check, 20000);
+    document.addEventListener('visibilitychange', onVis);
+    return () => { evts.forEach((e) => window.removeEventListener(e, bump, true)); clearInterval(t); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
 
   // Safari: audio may only start inside a user-activation event (touchend / click / keydown),
   // so keep listening until the AudioContext is actually running.
@@ -39,8 +84,16 @@ export default function App() {
   }, []);
   useEffect(() => { window.scrollTo(0, 0); stopSpeaking(); }, [view.name]);
 
-  const patchSettings = useCallback((p) => setSettings((s) => ({ ...s, ...p })), []);
-  const age = settings.age;
+  const patchSettings = useCallback((p) => {
+    const { age, filters, studentName, ...rest } = p;
+    if (Object.keys(rest).length) setShared((s) => ({ ...s, ...rest }));
+    const mine = {};
+    if (age !== undefined) mine.age = age;
+    if (filters !== undefined) mine.filters = filters;
+    if (studentName !== undefined) mine.name = studentName;
+    if (Object.keys(mine).length && activeId) updateProfile(activeId, mine);
+  }, [activeId, updateProfile]);
+  const age = tryAge ?? settings.age;
   const curriculum = getCurriculum(age);
   const totalStars = useMemo(() => sessions.reduce((a, s) => a + (s.stars || 0), 0), [sessions]);
   const dayStreak = useMemo(() => practiceStreakDays(sessions), [sessions]);
@@ -48,7 +101,7 @@ export default function App() {
   const startSession = (sessionAge, mode, config, opts = {}) => {
     setSetupMode(null);
     if (!opts.targeted) {
-      setSettings((s) => ({ ...s, filters: { ...s.filters, [sessionAge]: { ...(s.filters[sessionAge] || {}), [mode]: config } } }));
+      updateProfile(activeId, (p) => ({ filters: { ...p.filters, [sessionAge]: { ...(p.filters[sessionAge] || {}), [mode]: config } } }));
     }
     setView({ name: 'play', age: sessionAge, mode, config, targeted: !!opts.targeted, key: uid() });
   };
@@ -60,7 +113,7 @@ export default function App() {
     const config = mode === 'flash'
       ? { topics: t, difficulty: saved.difficulty || cur.defaultDifficulty, seconds: saved.seconds || cur.defaults.flash.seconds, maxCards: cur.defaults.flash.maxCards }
       : { topics: t, difficulty: saved.difficulty || cur.defaultDifficulty, count: saved.count || cur.defaults[mode].count };
-    if (sessionAge !== settings.age) patchSettings({ age: sessionAge });
+    if (sessionAge !== age) setTryAge(sessionAge);
     startSession(sessionAge, mode, config, { targeted: true });
   };
 
@@ -78,7 +131,38 @@ export default function App() {
     setView({ name: 'summary', session, config });
   };
 
+  /* ------------------------------ children & backup ------------------------------ */
+  const sessionsFor = (id) => (id === activeId ? sessions : loadProfileSessions(id));
+  const addChild = () => { const p = newProfile(profiles); setProfiles((l) => [...l, p]); return p.id; };
+  const removeChild = (id) => {
+    if (profiles.length < 2) return;
+    deleteProfileSessions(id);
+    const rest = profiles.filter((p) => p.id !== id);
+    setProfiles(rest);
+    if (id === activeId) activate(rest[0].id);
+  };
+  const exportAll = () => exportFamily(profiles.map((p) => ({ profile: p, sessions: sessionsFor(p.id) })), settings);
+  const importAll = async (file) => {
+    const entries = await readBackup(file);
+    let added = 0; let kids = 0; const known = new Set(profiles.map((p) => p.id)); const fresh = [];
+    for (const e of entries) {
+      const id = e.profile ? (known.has(e.profile.id) ? e.profile.id : (fresh.push(e.profile), known.add(e.profile.id), e.profile.id)) : activeId;
+      if (e.profile && fresh.includes(e.profile)) kids++;
+      const { merged, added: n } = mergeSessions(sessionsFor(id), e.sessions);
+      added += n;
+      if (id === activeId) setSessions(merged); else saveProfileSessions(id, merged);
+    }
+    if (fresh.length) setProfiles((l) => [...l, ...fresh.map((p) => ({ avatar: '🌟', age: 3, filters: {}, name: '', ...p }))]);
+    return `Imported ${added} new session${added === 1 ? '' : 's'}${kids ? ` and ${kids} child profile${kids === 1 ? '' : 's'}` : ''}.`;
+  };
+
   /* ------------------------------ routing ------------------------------ */
+  if (!active) {
+    if (pickerGate) {
+      return <ParentGate pin={settings.pin} onPass={() => { setPickerGate(false); activate(profiles[0].id); setView({ name: 'parent' }); }} onCancel={() => setPickerGate(false)} />;
+    }
+    return <WhoIsLearning profiles={profiles} onPick={activate} onParent={() => setPickerGate(true)} />;
+  }
   if (view.name === 'play') {
     const cur = getCurriculum(view.age);
     const props = { curriculum: cur, config: view.config, onFinish: finishSession, onExit: () => setView({ name: 'home' }), settings, onToggleVoice: () => patchSettings({ voice: !settings.voice }) };
@@ -101,18 +185,22 @@ export default function App() {
   if (view.name === 'parent') {
     return (
       <ParentPortal sessions={sessions} settings={settings} onSettings={patchSettings} onSessions={setSessions}
+        profiles={profiles} activeId={activeId} sessionsFor={sessionsFor}
+        onSwitchChild={selectChild} onAddChild={addChild} onUpdateChild={(id, patch) => { if (typeof patch === 'object' && 'age' in patch && id === activeId) setTryAge(null); updateProfile(id, patch); }} onRemoveChild={removeChild}
+        onExportAll={exportAll} onImportAll={importAll}
         onExit={() => setView({ name: 'home' })} onLaunch={launchTargeted} />
     );
   }
 
   return (
     <div className="min-h-[100dvh] pb-8">
-      <Header name={settings.studentName} stars={totalStars} dayStreak={dayStreak} sound={settings.sound}
+      <Header name={settings.studentName} child={multi ? { name: displayName(active, activeIndex), avatar: active.avatar } : null} onSwitch={switchChild} stars={totalStars} dayStreak={dayStreak} sound={settings.sound}
         onToggleSound={() => patchSettings({ sound: !settings.sound })} onParent={() => setView({ name: 'gate' })} />
-      <Home age={age} onAge={(a) => patchSettings({ age: a })} sessions={sessions}
+      <Home age={age} onAge={setTryAge} sessions={sessions}
         onPickMode={(m) => setSetupMode(m)} onQuickStart={(m, topics) => launchTargeted(age, m, topics)} />
       {setupMode && curriculum && (
         <SetupSheet key={`${age}-${setupMode}`} curriculum={curriculum} mode={setupMode} saved={settings.filters[age]?.[setupMode]}
+          child={multi ? { name: displayName(active, activeIndex), avatar: active.avatar } : null} onNotMe={switchChild}
           onClose={() => setSetupMode(null)} onStart={(config) => startSession(age, setupMode, config)} />
       )}
     </div>

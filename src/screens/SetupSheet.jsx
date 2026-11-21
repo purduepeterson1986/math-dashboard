@@ -5,7 +5,7 @@ import { modeById } from '../curriculum/index.js';
 import { topicsForMode } from '../lib/session.js';
 
 /** Bottom sheet shown before a session: collapsible topic filters, difficulty preset, length. */
-export default function SetupSheet({ curriculum, mode, saved, onStart, onClose }) {
+export default function SetupSheet({ curriculum, mode, saved, child, onNotMe, onStart, onClose }) {
   const m = modeById(mode);
   const available = useMemo(() => curriculum.topics.filter((t) => mode === 'mix' || t.modes.includes(mode)), [curriculum, mode]);
   const initialTopics = (saved?.topics || available.map((t) => t.id)).filter((id) => available.some((t) => t.id === id));
@@ -47,6 +47,13 @@ export default function SetupSheet({ curriculum, mode, saved, onStart, onClose }
         </div>
 
         <div className="flex-1 scroll-y px-6 pb-4 space-y-5">
+          {child && (
+            <div className="flex items-center gap-3 rounded-2xl bg-brand-50 border-2 border-brand-100 px-4 py-3">
+              <span className="text-4xl leading-none" aria-hidden="true">{child.avatar}</span>
+              <div className="flex-1 min-w-0"><div className="text-xs font-extrabold uppercase tracking-widest text-ink-muted">Learning today</div><div className="text-xl font-black text-ink truncate">{child.name}</div></div>
+              <button type="button" onClick={onNotMe} className="press min-h-11 px-4 rounded-xl bg-white border border-line font-extrabold text-ink-soft">Not {child.name}?</button>
+            </div>
+          )}
           {/* Difficulty */}
           <div>
             <div className="text-xs font-extrabold uppercase tracking-widest text-ink-muted mb-2">Level</div>

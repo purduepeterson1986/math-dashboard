@@ -1,7 +1,7 @@
 const KEY_SESSIONS = 'lumen.sessions.v1';
 const KEY_SETTINGS = 'lumen.settings.v1';
 
-function safeGet(key, fallback) {
+export function safeGet(key, fallback) {
   try {
     const raw = window.localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -9,7 +9,7 @@ function safeGet(key, fallback) {
     return fallback;
   }
 }
-function safeSet(key, value) {
+export function safeSet(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
     return true;
@@ -48,6 +48,11 @@ export function exportData(sessions, settings) {
     settings: { ...settings, pin: settings.pin ? '(set)' : null },
     sessions,
   };
+  saveJSONFile(payload);
+}
+
+/** Share-sheet / download of a JSON backup. */
+export function saveJSONFile(payload) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const stamp = new Date().toISOString().slice(0, 10);
   const filename = `lumen-math-backup-${stamp}.json`;
