@@ -132,3 +132,25 @@ export const formatDuration = (ms) => {
   const s = total % 60;
   return m ? `${m}m ${String(s).padStart(2, '0')}s` : `${s}s`;
 };
+
+/**
+ * Results by difficulty level for one age: overall per level, and per topic per level.
+ * Uses each session's chosen level (session.config.difficulty) and each question's first-try result.
+ */
+export function levelStats(sessions, curriculum) {
+  const levels = curriculum.difficulties.map((d) => ({ id: d.id, label: d.label, sessions: 0, attempts: 0, correct: 0, ms: 0 }));
+  const byId = Object.fromEntries(levels.map((l) => [l.id, l]));
+  const topics = curriculum.topics.map((t) => ({ topic: t.id, label: t.label, group: t.group, per: Object.fromEntries(levels.map((l) => [l.id, { attempts: 0, correct: 0, ms: 0 }])) }));
+  const tById = Object.fromEntries(topics.map((t) => [t.topic, t]));
+  for (const s of sessions) {
+    const lv = byId[s.config?.difficulty];
+    if (!lv) continue;
+    lv.sessions += 1;
+    for (const q of s.questions || []) {
+      lv.attempts += 1; lv.correct += q.correct ? 1 : 0; lv.ms += q.ms || 0;
+      const t = tById[q.topic];
+      if (t) { const c = t.per[lv.id]; c.attempts += 1; c.correct += q.correct ? 1 : 0; c.ms += q.ms || 0; }
+    }
+  }
+  return { levels, topics };
+}

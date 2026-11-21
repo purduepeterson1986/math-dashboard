@@ -8,7 +8,7 @@ import Modal from '../components/Modal.jsx';
 import Summary from './Summary.jsx';
 import { MathText } from '../components/Visual.jsx';
 import { CURRICULA, MODES, AGE_META, getCurriculum, modeById } from '../curriculum/index.js';
-import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats } from '../lib/diagnostics.js';
+import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats, levelStats } from '../lib/diagnostics.js';
 import { exportData, importData } from '../lib/storage.js';
 import { topicsForMode } from '../lib/session.js';
 
@@ -188,6 +188,74 @@ function TargetButtons({ age, topics, onLaunch }) {
   );
 }
 
+
+/* --------------------------- Results by level --------------------------- */
+const MIN_N = 5; // answers needed before a level's number is trusted
+function LevelResults({ sessions, age }) {
+  const cur = getCurriculum(age);
+  const { levels, topics } = useMemo(() => levelStats(sessions, cur), [sessions, cur]);
+  const used = levels.filter((l) => l.attempts > 0);
+  if (!used.length) return null;
+  const acc = (c) => (c.attempts ? c.correct / c.attempts : null);
+  const cell = (c) => {
+    if (!c.attempts) return <span className="text-ink-muted">—</span>;
+    const a = acc(c); const tone = a >= 0.85 ? 'text-good' : a >= 0.65 ? 'text-warn' : 'text-bad';
+    return <span className={`font-black tabular ${c.attempts < MIN_N ? 'opacity-60' : ''} ${tone}`}>{pct(a)}<span className="ml-1 text-xs font-bold text-ink-muted">({c.correct}/{c.attempts})</span></span>;
+  };
+  // Topics where a higher level isn't scoring lower than the one below it (both with enough answers)
+  const notes = [];
+  for (const t of topics) {
+    for (let i = 1; i < levels.length; i++) {
+      const lo = t.per[levels[i - 1].id]; const hi = t.per[levels[i].id];
+      if (lo.attempts >= MIN_N && hi.attempts >= MIN_N && acc(hi) >= acc(lo) && acc(lo) >= 0.85) notes.push(`${t.label}: ${levels[i].label} scored as well as ${levels[i - 1].label} (${pct(acc(hi))} vs ${pct(acc(lo))}). It may be ready to move up, or that level may be too easy.`);
+      if (lo.attempts >= MIN_N && hi.attempts >= MIN_N && acc(hi) >= acc(lo) && acc(lo) < 0.85) notes.push(`${t.label}: ${levels[i].label} scored at least as well as ${levels[i - 1].label} (${pct(acc(hi))} vs ${pct(acc(lo))}), even though neither is mastered. Worth a look.`);
+    }
+  }
+  const groups = [...new Set(topics.map((t) => t.group))];
+  return (
+    <Card title="Results by level" icon={<TrendingUp size={20} className="text-brand-600" />}>
+      <p className="text-sm font-semibold text-ink-soft mb-3">First-try accuracy at each level. A harder level should usually score lower or take longer. Faded numbers have fewer than {MIN_N} answers.</p>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {levels.map((l) => (
+          <div key={l.id} className="rounded-2xl bg-slate-50 border border-line p-3">
+            <div className="text-xs font-extrabold uppercase tracking-widest text-ink-muted">{l.label}</div>
+            <div className="text-2xl font-black tabular mt-1">{l.attempts ? pct(l.correct / l.attempts) : '—'}</div>
+            <div className="text-xs font-bold text-ink-muted">{l.attempts ? `${l.attempts} answers · ${(l.ms / l.attempts / 1000).toFixed(1)}s each · ${l.sessions} session${l.sessions === 1 ? '' : 's'}` : 'not tried yet'}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs font-extrabold uppercase tracking-widest text-ink-muted">
+              <th className="py-2 pr-3">Topic</th>{levels.map((l) => <th key={l.id} className="py-2 px-2">{l.label}</th>)}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {groups.map((g) => (
+              <React.Fragment key={g}>
+                <tr><td colSpan={levels.length + 1} className="pt-3 pb-1 text-xs font-extrabold text-ink-muted">{g}</td></tr>
+                {topics.filter((t) => t.group === g).map((t) => (
+                  <tr key={t.topic}>
+                    <td className="py-2 pr-3 font-bold">{t.label}</td>
+                    {levels.map((l) => <td key={l.id} className="py-2 px-2 whitespace-nowrap">{cell(t.per[l.id])}</td>)}
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {notes.length > 0 && (
+        <div className="mt-4 rounded-2xl bg-warn-soft border border-warn/20 p-3">
+          <div className="font-extrabold flex items-center gap-2 mb-1"><Lightbulb size={18} className="text-warn" /> Worth checking</div>
+          <ul className="space-y-1 text-sm font-semibold text-ink">{notes.map((n) => <li key={n}>{n}</li>)}</ul>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /* ------------------------------ Mastery ------------------------------ */
 function Mastery({ sessions, age, onLaunch }) {
   const cur = getCurriculum(age);
@@ -204,6 +272,7 @@ function Mastery({ sessions, age, onLaunch }) {
           <TargetButtons age={age} topics={weak} onLaunch={onLaunch} />
         </Card>
       )}
+      <LevelResults sessions={sessions.filter((s) => s.age === age)} age={age} />
       {groups.map((g) => (
         <Card key={g} title={g}>
           <ul className="divide-y divide-line">
