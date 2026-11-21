@@ -9,7 +9,8 @@ import { THEMED } from '../src/curriculum/middleEarth.js';
 const MODES = ['flash', 'worksheet', 'story', 'stem'];
 let failures = 0;
 let total = 0;
-const fail = (msg, q) => { failures++; if (failures < 40) console.error('FAIL:', msg, JSON.stringify(q).slice(0, 400)); };
+const kinds = {};
+const fail = (msg, q) => { failures++; const k = msg.replace(/[:\d].*$/, '').trim() + ' ' + (msg.match(/\d+\/[a-z0-9]+/i)?.[0] || ''); kinds[k] = (kinds[k] || 0) + 1; if (kinds[k] <= 2 && failures < 60) console.error('FAIL:', msg, JSON.stringify(q).slice(0, 400)); };
 const BAD = /NaN|Infinity|undefined|null|\[object/;
 
 for (const [age, cur] of Object.entries(CURRICULA)) {
@@ -25,6 +26,7 @@ for (const [age, cur] of Object.entries(CURRICULA)) {
           const text = [q.prompt, q.display, q.explanation, q.answerLabel, ...(q.hints || []), ...(q.choices || []).map((c) => c.text || '')].join(' ');
           if (BAD.test(text)) fail(`bad text ${age}/${topic.id}/${mode}/${diff}`, q);
           if (!q.prompt && !q.display) fail('no prompt', q);
+          if (q.answerLabel === undefined || q.answerLabel === null || q.answerLabel === '') fail(`no answer label ${age}/${topic.id}`, q);
           if (q.input === 'choice') {
             if (!q.choices || q.choices.length < 2) fail('few choices', q);
             if (!q.choices.some((c) => c.id === q.answer)) fail('answer not in choices', q);
@@ -82,5 +84,6 @@ const cases = [
 ];
 for (const [g, q, want] of cases) { total++; if (checkAnswer(g, q) !== want) fail(`checkAnswer(${g}, ${q.answer}) != ${want}`, q); }
 
+if (failures) console.error(kinds);
 console.log(`${total} checks, ${failures} failures`);
 process.exit(failures ? 1 : 0);

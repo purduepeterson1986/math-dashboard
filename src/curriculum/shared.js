@@ -26,3 +26,15 @@ export const distinctShape = (target, other) => other !== target && !(other === 
 
 /** Plural helper: plural(3,'apple') -> '3 apples' */
 export const plural = (n, word, pl) => `${n} ${n === 1 ? word : pl || `${word}s`}`;
+
+/** Reuse a question from another age's generator under this age's topic id. */
+export const retopic = (q, topic) => (q ? { ...q, topic, key: `${topic}|${q.key}` } : q);
+
+/** For read-aloud ages: give a question a plain-English `speak` built from its prompt if it has none. */
+export function withSpeak(q, toSpeech) {
+  if (!q || q.speak) return q;
+  const seq = q.visual?.type === 'sequence' ? `${q.visual.terms.filter((t) => t !== '·').join(', ')}.` : null;
+  const parts = [seq, q.prompt, q.display && !q.prompt?.includes(q.display) ? q.display : null].filter(Boolean)
+    .map((t) => toSpeech(String(t).replace(/☐/g, 'box')));
+  return { ...q, speak: parts.join('. ').replace(/\.\./g, '.') };
+}

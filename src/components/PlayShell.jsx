@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { X, Volume2, VolumeX } from 'lucide-react';
 import Modal from './Modal.jsx';
+import Scratchpad, { PenButton } from './Scratchpad.jsx';
 
 /**
  * Full-screen play layout.
  * Landscape: problem on the left, input dock on the right. Portrait: problem above, dock below.
  */
-export default function PlayShell({ title, subtitle, icon, progress, stats, voice, onExit, confirmExit = true, problem, dock, footer, accent = 'brand' }) {
+export default function PlayShell({ title, subtitle, icon, progress, stats, voice, scratch, onExit, confirmExit = true, problem, dock, footer, accent = 'brand' }) {
   const [asking, setAsking] = useState(false);
+  const [pen, setPen] = useState(false);
+  const ink = useRef({});
   return (
     <div className="h-[100dvh] flex flex-col bg-canvas safe-top">
       <header className="shrink-0 px-4 pt-3 pb-2">
@@ -24,6 +27,7 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, voic
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {scratch && <PenButton on={pen} onClick={() => setPen((v) => !v)} />}
             {voice && (
               <button type="button" onClick={voice.onToggle} aria-pressed={voice.on} aria-label={voice.on ? 'Turn voice off' : 'Turn voice on'}
                 className={`press h-12 px-3.5 rounded-2xl border flex items-center gap-1.5 font-extrabold card-shadow ${voice.on ? 'bg-brand-50 border-brand-200 text-brand-700' : 'bg-white border-line text-ink-muted'}`}>
@@ -41,9 +45,12 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, voic
         )}
       </header>
       <main className="flex-1 min-h-0 flex landscape:flex-row portrait:flex-col gap-3 px-4 pb-3 safe-bottom">
-        <section className="flex-1 min-h-0 scroll-y rounded-[28px] bg-white/60 border border-line px-5 py-6 flex">
-          <div className="m-auto w-full">{problem}</div>
-        </section>
+        <div className="flex-1 min-h-0 relative flex">
+          <section className="flex-1 min-h-0 scroll-y rounded-[28px] bg-white/60 border border-line px-5 py-6 flex">
+            <div className="m-auto w-full">{problem}</div>
+          </section>
+          {scratch && <Scratchpad qKey={scratch} active={pen} inkRef={ink} onClose={() => setPen(false)} />}
+        </div>
         <aside className="shrink-0 landscape:w-[min(400px,42vw)] portrait:w-full landscape:scroll-y flex flex-col gap-3 justify-end landscape:justify-center-safe">
           {dock}
         </aside>

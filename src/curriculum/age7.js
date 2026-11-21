@@ -25,7 +25,7 @@ function choose(o, correct, wrong) {
 const regroups = (a, b) => String(a).split('').reverse().some((d, i) => Number(d) + Number(String(b).split('').reverse()[i] || 0) >= 10);
 
 /* ------------------------------ Addition ------------------------------ */
-function addition(mode, d) {
+export function addition(mode, d) {
   const topic = 'add';
   if (mode === 'story') return addStory(d);
   let a; let b; let c = 0;
@@ -58,7 +58,7 @@ function addStory(d) {
 }
 
 /* ----------------------------- Subtraction ----------------------------- */
-function subtraction(mode, d) {
+export function subtraction(mode, d) {
   const topic = 'sub';
   if (mode === 'story') return subStory(d);
   let a; let b;
@@ -86,7 +86,7 @@ function subStory(d) {
 
 /* ------------------------------ Place value ------------------------------ */
 const PLACE = ['ones', 'tens', 'hundreds', 'thousands'];
-function placevalue(mode, d) {
+export function placevalue(mode, d) {
   const topic = 'placevalue';
   const forms = mode === 'flash' ? by(d, ['value', 'tensMore'], ['value', 'expanded', 'tensMore'], ['round', 'value', 'tensMore'])
     : by(d, ['blocks', 'value', 'expanded'], ['blocks', 'value', 'expanded', 'compare', 'tensMore'], ['round', 'compare', 'expanded', 'value', 'blocks']);
@@ -135,7 +135,7 @@ function placevalue(mode, d) {
 }
 
 /* ------------------------------ Odd & even ------------------------------ */
-function evenodd(mode, d) {
+export function evenodd(mode, d) {
   const topic = 'evenodd';
   if (d !== 'easy' && chance(0.4)) {
     const a = rand(3, by(d, 20, 40, 99)); const b = rand(3, by(d, 20, 40, 99)); const even = (a + b) % 2 === 0;
@@ -152,7 +152,7 @@ function evenodd(mode, d) {
 }
 
 /* ----------------------------- Skip counting ----------------------------- */
-function skip(mode, d) {
+export function skip(mode, d) {
   const topic = 'skip';
   const step = pick(by(d, [2, 5, 10], [5, 10, 100, 3, 4], [3, 4, 6, 25, 50, 100]));
   const back = d !== 'easy' && chance(0.3);
@@ -168,7 +168,7 @@ function skip(mode, d) {
 
 /* ------------------------- Arrays, groups, × and ÷ ------------------------- */
 const GROUPS = [['🍪', 'cookies', 'plates'], ['🌷', 'tulips', 'rows'], ['🥚', 'eggs', 'nests'], ['⚽', 'balls', 'bins'], ['🍓', 'strawberries', 'bowls']];
-function arrays(mode, d) {
+export function arrays(mode, d) {
   const topic = 'arrays';
   const f = pick(by(d, ['array', 'repeated'], ['array', 'repeated', 'facts'], ['facts', 'divide', 'array', 'divide']));
   const facts = by(d, [2, 5, 10], [2, 3, 4, 5, 10], [3, 4, 6, 7, 8, 9]);
@@ -201,7 +201,7 @@ function arrays(mode, d) {
 }
 
 /* -------------------------------- Money -------------------------------- */
-function money(mode, d) {
+export function money(mode, d) {
   const topic = 'money';
   const kinds = by(d, [10, 5, 1], [25, 10, 5, 1], [100, 25, 10, 5, 1]);
   if (mode === 'story' || (d !== 'easy' && mode === 'stem')) {
@@ -222,7 +222,7 @@ function money(mode, d) {
 /* -------------------------------- Time -------------------------------- */
 const ts = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
 const addMin = (h, m, k) => { const t = ((h % 12) * 60 + m + k + 720) % 720; return [Math.floor(t / 60) || 12, t % 60]; };
-function time(mode, d) {
+export function time(mode, d) {
   const topic = 'time';
   const h = rand(1, 12);
   const m = d === 'easy' ? pick([0, 15, 30, 45]) : d === 'standard' ? 5 * rand(0, 11) : rand(0, 59);
@@ -247,7 +247,7 @@ function time(mode, d) {
 }
 
 /* ----------------------------- Measurement ----------------------------- */
-function measure(mode, d) {
+export function measure(mode, d) {
   const topic = 'measure';
   const unit = pick(['in', 'cm']);
   if (mode === 'story') {
@@ -270,7 +270,7 @@ function measure(mode, d) {
 
 /* ------------------------------- Fractions ------------------------------- */
 const FR = { 2: 'half', 3: 'third', 4: 'fourth', 6: 'sixth', 8: 'eighth' };
-function fractions(mode, d) {
+export function fractions(mode, d) {
   const topic = 'fractions';
   const f = pick(by(d, ['name'], ['name', 'name', 'compare'], ['name', 'compare', 'ofset', 'ofset']));
   if (f === 'ofset') {
@@ -305,7 +305,7 @@ function fractions(mode, d) {
 /* --------------------------- Shapes & attributes --------------------------- */
 const POLY = { triangle: 3, square: 4, rectangle: 4, hexagon: 6, diamond: 4 };
 const SOLID = [['cube', '🎲', 6, 8], ['rectangular prism', '📦', 6, 8]];
-function geometry(mode, d) {
+export function geometry(mode, d) {
   const topic = 'geometry';
   const f = pick(by(d, ['sides', 'name'], ['sides', 'vertices', 'name', 'quad'], ['faces', 'vertices', 'quad', 'total']));
   if (f === 'faces') {
@@ -342,7 +342,7 @@ const SETS = [
   { title: 'Pets in Our Class', items: [['Dog', '🐶'], ['Cat', '🐱'], ['Fish', '🐟'], ['Bird', '🐦']] },
   { title: 'Favorite Sport', items: [['Soccer', '⚽'], ['Swim', '🏊'], ['Bike', '🚲'], ['Hoops', '🏀']] },
 ];
-function data(mode, d) {
+export function data(mode, d) {
   const topic = 'data';
   const set = pick(SETS); const step = d === 'challenge' ? 2 : 1;
   const n = by(d, 3, 4, 4);
@@ -368,7 +368,7 @@ function data(mode, d) {
 }
 
 /* ---------------------------- Number puzzles ---------------------------- */
-function puzzles(mode, d) {
+export function puzzles(mode, d) {
   const topic = 'puzzles';
   const f = pick(by(d, ['missing', 'riddle'], ['missing', 'riddle', 'balance'], ['missing', 'riddle', 'balance', 'twostep']));
   if (f === 'missing') {

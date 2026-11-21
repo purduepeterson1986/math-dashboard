@@ -289,3 +289,69 @@ export function Crowd({ ids, size = 'lg', px: fixed, toScale }) {
     </div>
   );
 }
+
+/* ------------------------------ Picture graph ------------------------------ */
+/** Rows of pictures; `each` says how many one picture stands for (half pictures allowed when each is even). */
+export function PictureGraph({ rows, emoji, each = 1, title }) {
+  return (
+    <div className="w-full max-w-[520px] rounded-2xl bg-white border border-line overflow-hidden">
+      {title && <div className="px-4 py-2 text-base font-extrabold text-ink-soft border-b border-line text-center">{title}</div>}
+      {rows.map((r) => {
+        const full = Math.floor(r.value / each); const half = r.value % each !== 0;
+        return (
+          <div key={r.label} className="flex items-center gap-3 px-4 py-2 border-b border-line last:border-b-0">
+            <span className="w-20 shrink-0 text-right font-extrabold text-ink">{r.label}</span>
+            <span className="flex flex-wrap gap-1 text-3xl leading-none">
+              {Array.from({ length: full }, (_, i) => <span key={i}>{emoji}</span>)}
+              {half && <span className="inline-block overflow-hidden" style={{ width: '0.55em' }}>{emoji}</span>}
+            </span>
+          </div>
+        );
+      })}
+      <div className="px-4 py-1.5 bg-slate-50 text-sm font-bold text-ink-soft text-center">Key: {emoji} = {each}</div>
+    </div>
+  );
+}
+
+/* -------------------------------- Area grid -------------------------------- */
+/** A rectangle on a grid of unit squares (count the squares, or multiply rows × columns). */
+export function AreaGrid({ w, h, unit = '', labels = false, lshape }) {
+  const c = Math.max(20, Math.min(58, 380 / Math.max(w, h)));
+  const cut = lshape || null; // { cw, ch } removed from the top-right corner
+  const cells = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (cut && x >= w - cut.cw && y < cut.ch) continue;
+      cells.push(<rect key={`${x}-${y}`} x={x * c} y={y * c} width={c} height={c} fill="#c7d2fe" stroke="#4a49d9" strokeWidth="1.5" />);
+    }
+  }
+  const pad = labels ? 30 : 4;
+  return (
+    <svg viewBox={`${-pad} ${-pad} ${w * c + pad * 2} ${h * c + pad * 2}`} style={{ width: Math.min(480, w * c + pad * 2) }} className="max-w-full" role="img" aria-label="Shape on a grid">
+      {cells}
+      {labels && <text x={(w * c) / 2} y={-10} textAnchor="middle" fontSize="15" fontWeight="800" fill={INK}>{w}{unit ? ` ${unit}` : ''}</text>}
+      {labels && <text x={-10} y={(h * c) / 2 + 5} textAnchor="end" fontSize="15" fontWeight="800" fill={INK}>{h}{unit ? ` ${unit}` : ''}</text>}
+    </svg>
+  );
+}
+
+/* ---------------------------- Fraction number line ---------------------------- */
+export function FractionLine({ den, mark, max = 1 }) {
+  const W = 500; const pad = 30; const parts = den * max; const u = (W - pad * 2) / parts;
+  return (
+    <svg viewBox={`0 0 ${W} 90`} className="w-full max-w-[520px]" role="img" aria-label="Number line">
+      <line x1={pad} y1="45" x2={W - pad} y2="45" stroke={INK} strokeWidth="3" />
+      {Array.from({ length: parts + 1 }, (_, i) => {
+        const whole = i % den === 0;
+        return (
+          <g key={i}>
+            <line x1={pad + i * u} y1={whole ? 30 : 36} x2={pad + i * u} y2={whole ? 60 : 54} stroke={INK} strokeWidth={whole ? 3 : 2} />
+            {whole && <text x={pad + i * u} y="82" textAnchor="middle" fontSize="18" fontWeight="800" fill={INK}>{i / den}</text>}
+          </g>
+        );
+      })}
+      <circle cx={pad + mark * u} cy="45" r="9" fill="#e0444e" stroke="#fff" strokeWidth="3" />
+      <text x={pad + mark * u} y="20" textAnchor="middle" fontSize="16" fontWeight="900" fill="#e0444e">?</text>
+    </svg>
+  );
+}

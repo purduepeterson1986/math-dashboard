@@ -7,7 +7,8 @@
  * (then the normal generator is used).
  */
 import { rand, pick, sample, shuffle, chance, gcd } from '../lib/rng.js';
-import { makeChoices } from './shared.js';
+import { makeChoices, withSpeak } from './shared.js';
+import { toSpeech } from '../lib/audio.js';
 import { ART } from './middleEarthArt.js';
 
 let enabled = true;
@@ -27,7 +28,7 @@ const pickAcrossTiers = (k) => {
 const charChoice = (id) => ({ text: nameOf(id), visual: { type: 'character', id, toScale: true } });
 function choose(o, correct, wrong) {
   const { choices, answer } = makeChoices(correct, wrong);
-  return { input: 'choice', choices, answer, answerLabel: correct.text, ...o };
+  return { input: 'choice', choices, answer, answerLabel: correct.text ?? o.answerLabel ?? 'picture', ...o };
 }
 const small = (o) => ({ ...o, input: Number(o.answer) <= 10 ? 'kidpad' : 'keypad', answer: String(o.answer), answerLabel: String(o.answer) });
 const typed = (o) => ({ input: 'keypad', answerLabel: String(o.answer), ...o, answer: String(o.answer) });
@@ -84,14 +85,14 @@ export function themed3(mode, topic, d) {
     return choose({
       key: `me:patterns:${type}:${a}:${b}`, topic, prompt: 'What comes next?', visual: { type: 'pattern', items: [...seq.slice(0, -1).map(item), null] },
       speak: `${seq.slice(0, -1).map(nameOf).join(', ')}. Who comes next?`, hints: [`It goes ${type.split('').join('-')}.`],
-      summary: `${type} pattern with ${nameOf(a)} and ${nameOf(b)}`, explanation: `The pattern repeats, so ${nameOf(ans)} is next.`,
+      answerLabel: nameOf(ans), summary: `${type} pattern with ${nameOf(a)} and ${nameOf(b)}`, explanation: `The pattern repeats, so ${nameOf(ans)} is next.`,
     }, { visual: { type: 'character', id: ans, px: 110 } }, [{ visual: { type: 'character', id: ans === a ? b : a, px: 110 } }]);
   }
   if (topic === 'compare' && mode !== 'story') {
     const x = rand(1, 4); const y = x + rand(1, 2); const askMore = chance(0.5);
     return choose({
       key: `me:compare:${x}:${y}:${askMore}`, topic, prompt: `Which group has ${askMore ? 'MORE' : 'FEWER'} hobbits?`,
-      speak: `Which group has ${askMore ? 'more' : 'fewer'} hobbits?`, summary: `${x} vs ${y} hobbits`, explanation: `${y} is more than ${x}.`,
+      speak: `Which group has ${askMore ? 'more' : 'fewer'} hobbits?`, answerLabel: `${askMore ? y : x} hobbits`, summary: `${x} vs ${y} hobbits`, explanation: `${y} is more than ${x}.`,
     }, { visual: { type: 'crowd', ids: hobbitCrowd(askMore ? y : x), px: 50 } }, [{ visual: { type: 'crowd', ids: hobbitCrowd(askMore ? x : y), px: 50 } }]);
   }
   return null;
@@ -302,4 +303,86 @@ export function themed12(mode, topic, d) {
   return null;
 }
 
-export const THEMED = { 3: themed3, 5: themed5, 7: themed7, 12: themed12 };
+/* ----------------------------- shared: Bilbo's party clock ----------------------------- */
+const ts = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
+const addMin = (h, m, k) => { const t = ((h % 12) * 60 + m + k + 720) % 720; return [Math.floor(t / 60) || 12, t % 60]; };
+function bilboParty(topic, durs, step) {
+  const h = rand(1, 9); const m = step * rand(0, 60 / step - 1); const dur = pick(durs);
+  const [eh, em] = addMin(h, m, dur);
+  const what = pick(['Bilbo’s birthday party', 'Gandalf’s fireworks show', 'The hobbits’ dance', 'Second breakfast']);
+  const wrong = [addMin(h, m, dur + 30), addMin(h, m, dur - step), addMin(h, m, dur + 60)].map(([a, b]) => ts(a, b)).filter((x, i, arr) => x !== ts(eh, em) && arr.indexOf(x) === i);
+  return choose({ key: `me:${topic}:party:${h}:${m}:${dur}:${what}`, topic, story: { emoji: '🎉', title: 'Party in the Shire' },
+    prompt: `${what} starts at the time on the clock and lasts ${dur} minutes. What time does it end?`, visual: { type: 'clock', h, m },
+    hints: ['Count on by hours first, then minutes.', '60 minutes make 1 hour.'], explanation: `${ts(h, m)} plus ${dur} minutes is ${ts(eh, em)}.` },
+  { text: ts(eh, em) }, wrong.slice(0, 3).map((x) => ({ text: x })));
+}
+
+/* ------------------------------------ Age 4 ------------------------------------ */
+const D3 = { gentle: 'ready', ready: 'stretch', stretch: 'stretch' };
+const D5 = { gentle: 'gentle', ready: 'gentle', stretch: 'ready' };
+export function themed4(mode, topic, d) {
+  if (topic === 'count10') return countHobbits(topic, d === 'gentle' ? 3 : 5, 10, mode === 'stem' && d !== 'gentle');
+  if (topic === 'compare' || topic === 'patterns') return themed3(mode, topic, D3[d]);
+  if (topic === 'measure') return whoTaller(topic, mode, d === 'stretch');
+  if (topic === 'count20' || topic === 'sorting' || topic === 'skip') return themed5(mode, topic, D5[d]);
+  return null;
+}
+
+/* ------------------------------------ Age 6 ------------------------------------ */
+export const themed6 = (mode, topic, d) => withSpeak(themed6raw(mode, topic, d), toSpeech);
+function themed6raw(mode, topic, d) {
+  if ((topic === 'add' || topic === 'sub') && mode === 'story') return themed5(mode, topic, d === 'gentle' ? 'ready' : 'stretch');
+  if (topic === 'compare' && mode === 'story') return themed5(mode, topic, 'ready');
+  if (topic === 'measure') return mode === 'story' ? themed5(mode, topic, 'ready') : whoTaller(topic, mode, true);
+  if (topic === 'skip') return themed5(mode, topic, 'ready');
+  if (topic === 'money' && mode === 'story') return themed7(mode, topic, 'easy');
+  if (topic === 'time' && mode !== 'flash') return bilboParty(topic, d === 'gentle' ? [60, 120] : [30, 60, 90], 30);
+  if (topic === 'graphs') {
+    const n = d === 'gentle' ? 3 : 4; const each = d === 'stretch' ? 2 : 1;
+    const vals = sample([1, 2, 3, 4, 5, 6, 7], n).map((v) => v * each);
+    const rows = HOBBITS.slice(0, n).map((id, i) => ({ label: nameOf(id), value: vals[i] }));
+    const [A, B] = sample(rows, 2); const [hi, lo] = A.value > B.value ? [A, B] : [B, A];
+    const visual = { type: 'picgraph', rows, emoji: '🍄', each, title: 'Mushrooms the Hobbits Found' };
+    if (d === 'gentle' || chance(0.4)) {
+      return typed({ key: `me:graphs:${vals.join(',')}:read:${A.label}`, topic, prompt: `How many mushrooms did ${A.label} find?`, visual, answer: A.value,
+        hints: [each > 1 ? 'Each mushroom means 2!' : 'Count the mushrooms in the row.'], explanation: `${A.label} found ${A.value}.` });
+    }
+    return typed({ key: `me:graphs:${vals.join(',')}:more:${A.label}:${B.label}`, topic, prompt: `How many more mushrooms did ${hi.label} find than ${lo.label}?`, visual, answer: hi.value - lo.value,
+      hints: [each > 1 ? 'Each mushroom means 2!' : 'Count both rows.', 'Then take away.'], explanation: `${hi.value} take away ${lo.value} is ${hi.value - lo.value}.` });
+  }
+  return null;
+}
+
+/* ------------------------------------ Age 8 ------------------------------------ */
+const retopicME = (q, topic) => (q ? { ...q, topic, key: `${topic}|${q.key}` } : q);
+export function themed8(mode, topic, d) {
+  const by = (e, s, c) => (d === 'easy' ? e : d === 'challenge' ? c : s);
+  if (topic === 'mul' && (mode === 'story' || mode === 'stem')) {
+    const r = rand(3, by(5, 9, 12)); const c = rand(3, by(5, 9, 12));
+    return typed({ key: `me:mul:elves:${r}:${c}`, topic, story: { emoji: '🏹', title: "Helm's Deep" }, answer: r * c,
+      prompt: `At Helm's Deep, the elves stand on the wall in ${r} rows of ${c}. How many elves?`, visual: mode === 'stem' ? { type: 'array', rows: r, cols: c, emoji: '🧝' } : undefined,
+      hints: [`${r} × ${c}`], explanation: `${r} × ${c} = ${r * c} elves.` });
+  }
+  if (topic === 'div' && mode === 'story') {
+    const per = rand(3, by(5, 9, 12)); const n = rand(3, by(5, 9, 12));
+    return typed({ key: `me:div:lembas:${per}:${n}`, topic, story: { emoji: '🍃', title: 'Lembas Bread' }, answer: n,
+      prompt: `The Fellowship has ${per * n} lembas wafers. Each traveler gets ${per}. How many travelers can be fed?`, hints: [`${per} × ? = ${per * n}`], explanation: `${per * n} ÷ ${per} = ${n}.` });
+  }
+  if ((topic === 'add' || topic === 'sub') && mode === 'story') return retopicME(themed7(mode, topic, d === 'easy' ? 'standard' : 'challenge'), topic);
+  if (topic === 'data') return retopicME(themed7(mode, 'data', 'challenge'), topic);
+  if (topic === 'time' && mode !== 'flash') return bilboParty(topic, by([30, 45, 60], [25, 40, 75, 95], [35, 50, 85, 125]), by(15, 5, 5));
+  if (topic === 'area' && (mode === 'story' || chance(0.4))) {
+    const w = rand(4, by(8, 12, 15)); const h = rand(3, by(6, 9, 12)); const askP = chance(0.5);
+    return typed({ key: `me:area:bagend:${w}:${h}:${askP}`, topic, story: { emoji: '🌻', title: 'Bag End Garden' }, answer: askP ? 2 * (w + h) : w * h,
+      prompt: askP ? `Sam's garden at Bag End is ${w} meters long and ${h} meters wide. How many meters of fence go all the way around it?` : `Sam's garden at Bag End is ${w} meters long and ${h} meters wide. What is its area in square meters?`,
+      visual: { type: 'rect', w, h, unit: 'm' }, hints: [askP ? 'Add all four sides.' : 'Area = length × width.'], explanation: askP ? `2 × (${w} + ${h}) = ${2 * (w + h)} m.` : `${w} × ${h} = ${w * h} square meters.` });
+  }
+  if (topic === 'mass' && mode === 'story') {
+    const per = rand(2, 6); const k = rand(3, by(5, 8, 12));
+    return typed({ key: `me:mass:pot:${per}:${k}`, topic, story: { emoji: '🍲', title: "Sam's Cooking" }, answer: per * k,
+      prompt: `Sam's cooking pot holds ${per} liters of stew. He cooks ${k} pots for the hobbits. How many liters of stew is that?`, hints: [`${k} × ${per}`], explanation: `${k} × ${per} = ${per * k} liters.` });
+  }
+  return null;
+}
+
+export const THEMED = { 3: themed3, 4: themed4, 5: themed5, 6: themed6, 7: themed7, 8: themed8, 12: themed12 };

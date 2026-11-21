@@ -14,10 +14,14 @@ public/icon.svg
 src/
   main.jsx, App.jsx, index.css
   curriculum/
-    index.js        registry {3: age3, 5: age5, 7: age7, 12: age12}, age metadata, mode list
+    index.js        registry {3–8, 12}, age metadata, mode list
     age3.js         Age 3 topics + generators (all 5 modes)
+    age4.js         Age 4 (Pre-K) — built from Age 3 & 5 generators at fitting levels
     age5.js         Age 5 (Kindergarten) topics + generators
+    age6.js         Age 6 (1st grade) — Age 5 & 7 generators + picture graphs, read aloud
     age7.js         Age 7 (2nd grade) topics + generators
+    age8.js         Age 8 (3rd grade) — × ÷ facts, fraction lines, area grids + Age 7 generators
+    middleEarth.js  Lord of the Rings themed questions for every age (art: middleEarthArt.js)
     age12.js        Age 12 topics + generators (all 5 modes)
     shared.js       choice builders, names, emoji banks
   lib/

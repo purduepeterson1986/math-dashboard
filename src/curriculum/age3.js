@@ -57,7 +57,7 @@ const name = () => pick(NAMES);
 
 /* ------------------------------ topics ------------------------------ */
 
-function counting(topic, mode, d, lo, hi) {
+export function counting(topic, mode, d, lo, hi) {
   const t = pick(THINGS);
   const n = rand(lo, hi);
   const scatter = d === 'stretch' || chance(0.3);
@@ -103,7 +103,7 @@ function counting(topic, mode, d, lo, hi) {
   };
 }
 
-function numerals(mode, d) {
+export function numerals(mode, d) {
   const topic = 'numerals';
   const max = d === 'gentle' ? 5 : d === 'stretch' ? 20 : 10;
   const fmt = mode === 'stem' ? pick(['next', 'back']) : mode === 'story' ? 'story' : pick(['find', 'match', 'next']);
@@ -151,7 +151,7 @@ function numerals(mode, d) {
   };
 }
 
-function shapes(mode, d) {
+export function shapes(mode, d) {
   const topic = 'shapes';
   const pool = SHAPES_BY_LEVEL[lvl(d)];
   const fmt = mode === 'stem' ? pick(d === 'gentle' ? ['match'] : ['match', 'sides', 'odd']) : mode === 'story' ? 'real' : 'find';
@@ -229,7 +229,7 @@ function shapes(mode, d) {
   };
 }
 
-function sizes(mode, d) {
+export function sizes(mode, d) {
   const topic = 'size';
   if (mode === 'story') {
     const [bigE, smallE, bigN, smallN] = pick(BIG_SMALL);
@@ -266,7 +266,7 @@ function sizes(mode, d) {
 
 const PATTERN_TYPES = { gentle: ['AB'], ready: ['AB', 'AAB', 'ABB'], stretch: ['ABC', 'AABB', 'ABB', 'AAB', 'ABBC'] };
 
-function patterns(mode, d) {
+export function patterns(mode, d) {
   const topic = 'patterns';
   const type = pick(PATTERN_TYPES[lvl(d)]);
   const letters = [...new Set(type.split(''))];
@@ -303,7 +303,7 @@ function patterns(mode, d) {
   };
 }
 
-function compare(mode, d) {
+export function compare(mode, d) {
   const topic = 'compare';
   const gap = d === 'gentle' ? rand(2, 4) : d === 'stretch' ? 1 : rand(1, 3);
   const max = d === 'gentle' ? 6 : 10;
@@ -355,7 +355,7 @@ function compare(mode, d) {
   };
 }
 
-function oneMore(mode, d) {
+export function oneMore(mode, d) {
   const topic = 'oneMore';
   const t = pick(mode === 'story' ? TREATS : THINGS);
   let a; let b; let op;

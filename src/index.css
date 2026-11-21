@@ -59,11 +59,13 @@ button:disabled { cursor: not-allowed; }
 button:focus-visible { outline: 3px solid var(--color-brand-400); outline-offset: 2px; }
 
 .safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
+/* Home Screen app on iPad: keep content clear of the status bar / window-control blur band */
+@media (display-mode: standalone) { .safe-top { padding-top: max(env(safe-area-inset-top), 36px); } }
 .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
 .no-select { -webkit-user-select: none; user-select: none; }
 .tabular { font-variant-numeric: tabular-nums; }
 .press { transition: transform 90ms ease, box-shadow 90ms ease, background-color 120ms ease; }
-.press:active:not(:disabled) { transform: scale(.96); }
+.press:active:not(:disabled) { filter: brightness(.94); }
 .scroll-y { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .card-shadow { box-shadow: 0 1px 2px rgba(29,33,64,.05), 0 6px 20px -8px rgba(29,33,64,.12); }
 .key-shadow { box-shadow: 0 2px 0 rgba(29,33,64,.08), 0 1px 2px rgba(29,33,64,.06); }

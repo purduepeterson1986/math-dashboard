@@ -139,6 +139,7 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
       icon={<span className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center"><ClipboardList size={22} /></span>}
       progress={answeredCount / count}
       onExit={onExit}
+      scratch={curriculum.age >= 6 ? q.key : null}
       voice={talk ? { on: settings.voice, onToggle: onToggleVoice } : null}
       stats={<StatPill tone="brand">#{idx + 1}<span className="text-ink-muted font-bold">/{count}</span></StatPill>}
       problem={(

@@ -53,7 +53,7 @@ function choose(o, correct, wrong) {
 const bigNum = (n) => ({ text: String(n), big: true });
 
 /* ------------------------------ Counting ------------------------------ */
-function count20(mode, d) {
+export function count20(mode, d) {
   const topic = 'count20';
   const [lo, hi] = by(d, [6, 12], [11, 20], [18, 45]);
   const n = rand(lo, hi);
@@ -89,7 +89,7 @@ function count20(mode, d) {
 }
 
 /* --------------------------- Teens / tens & ones --------------------------- */
-function teens(mode, d) {
+export function teens(mode, d) {
   const topic = 'teens';
   if (d === 'stretch' || (mode === 'stem' && chance(0.5))) {
     const tens = rand(2, 9); const ones = rand(0, 9); const n = tens * 10 + ones;
@@ -118,7 +118,7 @@ const STORY_ADD = [
   (w, a, b, t) => [`${a} ${t.many} are in the yard. ${b} more come. How many ${t.many} now?`, 'In the Yard'],
   (w, a, b, t) => [`${w} picks ${a} ${t.many} and then ${b} more. How many in all?`, 'Picking Time'],
 ];
-function addition(mode, d) {
+export function addition(mode, d) {
   const topic = 'add';
   const max = by(d, 10, 10, 20);
   let a = rand(by(d, 1, 0, 3), by(d, 6, 9, 15)); let b = rand(by(d, 1, 0, 2), max - a);
@@ -145,7 +145,7 @@ function addition(mode, d) {
 }
 
 /* ----------------------------- Subtraction ----------------------------- */
-function subtraction(mode, d) {
+export function subtraction(mode, d) {
   const topic = 'sub';
   const max = by(d, 8, 10, 20);
   const a = rand(by(d, 3, 4, 11), max); const b = rand(1, by(d, Math.min(4, a - 1), a - 1, Math.min(10, a - 1)));
@@ -174,7 +174,7 @@ function subtraction(mode, d) {
 }
 
 /* ------------------------------ Make 10 ------------------------------ */
-function bonds(mode, d) {
+export function bonds(mode, d) {
   const topic = 'bonds';
   const whole = d === 'gentle' ? pick([5, 6, 7]) : d === 'stretch' ? pick([10, 12, 15, 20]) : pick([10, 10, 8, 9]);
   const part = rand(1, whole - 1);
@@ -192,7 +192,7 @@ function bonds(mode, d) {
 }
 
 /* --------------------------- Comparing numbers --------------------------- */
-function compare(mode, d) {
+export function compare(mode, d) {
   const topic = 'compare';
   const [lo, hi] = by(d, [1, 10], [1, 20], [10, 99]);
   if (mode === 'story') {
@@ -227,7 +227,7 @@ function compare(mode, d) {
 }
 
 /* ----------------------------- Skip counting ----------------------------- */
-function skip(mode, d) {
+export function skip(mode, d) {
   const topic = 'skip';
   let step; let start; let back = false;
   if (d === 'gentle') { step = pick([1, 10]); start = step === 10 ? 10 : rand(3, 14); }
@@ -244,7 +244,7 @@ function skip(mode, d) {
 }
 
 /* ------------------------------- Shapes ------------------------------- */
-function shapes(mode, d) {
+export function shapes(mode, d) {
   const topic = 'shapes';
   const fmt = mode === 'stem' ? pick(d === 'gentle' ? ['solid', 'sides'] : ['solid', 'sides', 'corners']) : mode === 'story' ? 'solid' : pick(['find', 'solid', 'find']);
   const pool = by(d, SHAPES_2D.slice(0, 5), SHAPES_2D.slice(0, 7), SHAPES_2D);
@@ -277,7 +277,7 @@ function shapes(mode, d) {
 
 /* ----------------------------- Measurement ----------------------------- */
 const STICK_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f97316'];
-function measure(mode, d) {
+export function measure(mode, d) {
   const topic = 'measure';
   const fmt = mode === 'story' ? pick(['heavier', 'diff']) : mode === 'stem' ? pick(by(d, ['cubes', 'longest'], ['cubes', 'longest', 'diff'], ['ruler', 'diff', 'cubes'])) : pick(by(d, ['longest', 'cubes'], ['cubes', 'longest', 'heavier'], ['ruler', 'cubes', 'diff']));
   if (fmt === 'cubes') {
@@ -316,7 +316,7 @@ function measure(mode, d) {
 
 /* -------------------------- Sorting & classifying -------------------------- */
 const COLOR_SHAPES = { red: ['🔴', '🟥'], blue: ['🔵', '🟦'], green: ['🟢', '🟩'], yellow: ['🟡', '🟨'] };
-function sorting(mode, d) {
+export function sorting(mode, d) {
   const topic = 'sorting';
   const fmt = mode === 'stem' ? pick(['odd', 'attr']) : mode === 'story' ? 'count' : pick(['odd', 'count', 'attr']);
   if (fmt === 'odd') {
@@ -353,7 +353,7 @@ function sorting(mode, d) {
 
 /* -------------------------------- Time -------------------------------- */
 const tstr = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
-function time(mode, d) {
+export function time(mode, d) {
   const topic = 'time';
   const h = rand(1, 12);
   const m = d === 'gentle' ? 0 : d === 'ready' ? pick([0, 0, 30]) : pick([0, 30]);

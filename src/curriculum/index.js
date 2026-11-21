@@ -1,6 +1,9 @@
 import age3 from './age3.js';
+import age4 from './age4.js';
 import age5 from './age5.js';
+import age6 from './age6.js';
 import age7 from './age7.js';
+import age8 from './age8.js';
 import age12 from './age12.js';
 
 /**
@@ -8,7 +11,7 @@ import age12 from './age12.js';
  *   1. create src/curriculum/ageN.js following the contract in PLAN.md
  *   2. import it and add it here.
  */
-export const CURRICULA = { 3: age3, 5: age5, 7: age7, 12: age12 };
+export const CURRICULA = { 3: age3, 4: age4, 5: age5, 6: age6, 7: age7, 8: age8, 12: age12 };
 export const getCurriculum = (age) => CURRICULA[age] || null;
 
 export const MIN_AGE = 3;
@@ -16,11 +19,11 @@ export const MAX_AGE = 18;
 
 export const AGE_META = {
   3: { stage: 'Preschool', planned: [] },
-  4: { stage: 'Pre-K', planned: ['Counting to 20', 'Comparing numbers', 'Shapes in the world', 'AB/ABC patterns', 'Measuring with objects'] },
+  4: { stage: 'Pre-K', planned: [] },
   5: { stage: 'Kindergarten', planned: [] },
-  6: { stage: '1st Grade', planned: ['Add & subtract within 20', 'Place value to 120', 'Telling time', 'Measuring length', 'Picture graphs'] },
+  6: { stage: '1st Grade', planned: [] },
   7: { stage: '2nd Grade', planned: [] },
-  8: { stage: '3rd Grade', planned: ['Multiplication & division facts', 'Unit fractions', 'Area & perimeter', 'Elapsed time', 'Rounding'] },
+  8: { stage: '3rd Grade', planned: [] },
   9: { stage: '4th Grade', planned: ['Multi-digit multiplication', 'Long division', 'Equivalent fractions', 'Angles', 'Factors & multiples'] },
   10: { stage: '5th Grade', planned: ['Fraction operations', 'Decimals to thousandths', 'Volume', 'Order of operations', 'Coordinate plane'] },
   11: { stage: '6th Grade', planned: ['Ratios & rates', 'Dividing fractions', 'Expressions', 'Statistics', 'Negative numbers'] },

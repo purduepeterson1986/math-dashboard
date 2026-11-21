@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { COLORS } from '../curriculum/shared.js';
-import { Clock, Coins, Ruler, CubeMeasure, Stick, ArrayGrid, Base10, FractionShape, BarGraph, NumberBond, Character, Lineup, Crowd } from './VisualsEarly.jsx';
+import { Clock, Coins, Ruler, CubeMeasure, Stick, ArrayGrid, Base10, FractionShape, BarGraph, NumberBond, Character, Lineup, Crowd, PictureGraph, AreaGrid, FractionLine } from './VisualsEarly.jsx';
 
 /* ---------------------------- MathText ---------------------------- */
 /** Renders strings containing [[n/d]] tokens as stacked fractions. */
@@ -398,6 +398,9 @@ export default function Visual({ v, size = 'lg' }) {
     case 'numberbond': return <NumberBond whole={v.whole} parts={v.parts} />;
     case 'character': return <Character id={v.id} px={v.px || (size === 'lg' ? 170 : size === 'md' ? 130 : 96)} toScale={v.toScale} label={v.label} />;
     case 'lineup': return <Lineup ids={v.ids} px={size === 'sm' ? 120 : 200} labels={v.labels !== false} />;
+    case 'picgraph': return <PictureGraph rows={v.rows} emoji={v.emoji} each={v.each} title={v.title} />;
+    case 'areagrid': return <AreaGrid w={v.w} h={v.h} unit={v.unit} labels={v.labels} lshape={v.lshape} />;
+    case 'fracline': return <FractionLine den={v.den} mark={v.mark} max={v.max} />;
     case 'crowd': return <Crowd ids={v.ids} size={size} px={v.px} toScale={v.toScale} />;
     case 'emojiset': return <div className="flex flex-wrap justify-center gap-2 max-w-[480px]" style={{ fontSize: size === 'lg' ? 48 : 34 }}>{v.items.map((e, i) => <span key={i} className="leading-none">{e}</span>)}</div>;
     case 'pattern':
