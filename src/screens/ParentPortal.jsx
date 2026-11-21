@@ -316,18 +316,18 @@ function SettingsTab({ settings, sessions, onSettings, onSessions }) {
           className="w-full h-14 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" placeholder="e.g. Maya" />
         <div className="mt-4 divide-y divide-line">
           <Toggle on={settings.sound} onClick={() => onSettings({ sound: !settings.sound })} icon={<Volume2 size={20} />} label="Sound effects" desc="Taps, correct/incorrect chimes, celebrations" />
-          <Toggle on={settings.voice} onClick={() => onSettings({ voice: !settings.voice })} icon={<Mic size={20} />} label="Read aloud (Ages 3 & 5)" desc="Speaks each question for pre-readers" />
+          <Toggle on={settings.voice} onClick={() => onSettings({ voice: !settings.voice })} icon={<Mic size={20} />} label="Read aloud (Ages 3–6)" desc="Speaks each question for pre-readers" />
           <Toggle on={settings.middleEarth !== false} onClick={() => onSettings({ middleEarth: settings.middleEarth === false })} icon={<Mountain size={20} />} label="Middle-earth questions" desc="Mixes Lord of the Rings characters and stories into the questions" />
         </div>
       </Card>
       <Card title="Parent PIN" icon={<KeyRound size={20} className="text-brand-600" />}>
         <p className="text-ink-soft font-semibold mb-3">{settings.pin ? 'A PIN is set. Change it or remove it below.' : 'No PIN set: the portal uses a grown-up math question. Set a 4-digit PIN for faster entry.'}</p>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <input value={pin1} onChange={(e) => setPin1(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" enterKeyHint="done" type="password" autoComplete="off"
             onKeyDown={(e) => { if (e.key === 'Enter' && pin1.length === 4) { e.preventDefault(); onSettings({ pin: pin1 }); setPin1(''); setMsg('PIN saved.'); } }}
-            aria-label="New 4-digit PIN" placeholder="New PIN" className="flex-1 h-14 rounded-2xl border-2 border-line px-4 text-2xl font-black tracking-[0.5em] outline-none focus:border-brand-500" />
+            aria-label="New 4-digit PIN" placeholder="New PIN" className="w-full min-w-0 h-14 rounded-2xl border-2 border-line px-4 text-2xl font-black tracking-[0.5em] outline-none focus:border-brand-500" />
           <button type="button" disabled={pin1.length !== 4} onClick={() => { onSettings({ pin: pin1 }); setPin1(''); setMsg('PIN saved.'); }}
-            className="press h-14 px-5 rounded-2xl bg-brand-600 text-white font-extrabold disabled:opacity-40">Save PIN</button>
+            className="press w-full h-14 px-5 rounded-2xl bg-brand-600 text-white font-extrabold disabled:opacity-40">Save PIN</button>
         </div>
         <p className="mt-2 text-sm font-semibold text-ink-muted">{pin1.length === 4 ? 'Tap Save PIN to finish.' : `Type 4 digits, then tap Save PIN (${pin1.length} of 4).`}</p>
         {settings.pin && <button type="button" onClick={() => { onSettings({ pin: null }); setMsg('PIN removed.'); }} className="press mt-3 min-h-11 px-4 rounded-xl bg-slate-100 font-extrabold">Remove PIN</button>}
