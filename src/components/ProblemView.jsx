@@ -4,7 +4,7 @@ import Visual, { MathText } from './Visual.jsx';
 import { speak, canSpeak } from '../lib/audio.js';
 
 /** Left/top side of the play screen: story frame, prompt, big expression, visual. */
-export default function ProblemView({ q, big, autoSpeak, children }) {
+export default function ProblemView({ q, big, autoSpeak, voiceOn = true, children }) {
   useEffect(() => {
     if (autoSpeak && q?.speak) {
       const t = setTimeout(() => speak(q.speak), 250);
@@ -28,7 +28,7 @@ export default function ProblemView({ q, big, autoSpeak, children }) {
           <h2 className={`text-center font-extrabold text-ink text-balance ${big ? 'text-4xl' : longPrompt ? 'text-[1.4rem] leading-snug font-bold' : 'text-3xl'} ${q.story && longPrompt ? 'text-left bg-white rounded-3xl border border-line px-6 py-5 card-shadow' : ''}`}>
             <MathText text={q.prompt} />
           </h2>
-          {q.speak && canSpeak() && (
+          {q.speak && voiceOn && canSpeak() && (
             <button type="button" onClick={() => speak(q.speak)} aria-label="Read aloud"
               className="press shrink-0 w-12 h-12 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center active:bg-brand-100">
               <Volume2 size={24} />
@@ -36,7 +36,7 @@ export default function ProblemView({ q, big, autoSpeak, children }) {
           )}
         </div>
       )}
-      {q.display && !(big && q.input === 'choice' && !q.visual) && (
+      {q.display && !q.hideDisplay && (
         <div className={`font-black tabular text-ink text-center ${big ? 'text-7xl' : 'text-6xl portrait:text-5xl'} leading-tight`}>
           <MathText text={q.display} />
         </div>

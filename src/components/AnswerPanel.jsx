@@ -10,7 +10,7 @@ import ChoiceGrid from './ChoiceGrid.jsx';
  *  - onSubmit(given): commit an answer
  *  - instant: choices & kid pad submit immediately on tap (false in worksheets)
  */
-export default function AnswerPanel({ q, value, onChange, onSubmit, state = 'idle', disabled, big, instant = true, submitLabel, compact }) {
+export default function AnswerPanel({ q, value, onChange, onSubmit, state = 'idle', disabled, big, simple, instant = true, submitLabel, compact }) {
   if (!q) return null;
   if (q.input === 'choice') {
     return (
@@ -38,7 +38,7 @@ export default function AnswerPanel({ q, value, onChange, onSubmit, state = 'idl
   return (
     <div className="flex flex-col gap-3">
       <AnswerDisplay value={value || ''} state={state === 'retry' ? 'wrong' : state} hint={q.hint || (q.decimalOnly ? 'Answer as a decimal' : null)} />
-      <MathKeypad value={value || ''} onChange={onChange} onSubmit={() => onSubmit(value)} disabled={disabled} submitLabel={submitLabel} compact={compact} />
+      <MathKeypad value={value || ''} onChange={onChange} onSubmit={() => onSubmit(value)} disabled={disabled} submitLabel={submitLabel} compact={compact} simple={simple} big={big} />
     </div>
   );
 }

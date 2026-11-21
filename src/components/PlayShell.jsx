@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Volume2, VolumeX } from 'lucide-react';
 import Modal from './Modal.jsx';
 
 /**
  * Full-screen play layout.
  * Landscape: problem on the left, input dock on the right. Portrait: problem above, dock below.
  */
-export default function PlayShell({ title, subtitle, icon, progress, stats, onExit, confirmExit = true, problem, dock, footer, accent = 'brand' }) {
+export default function PlayShell({ title, subtitle, icon, progress, stats, voice, onExit, confirmExit = true, problem, dock, footer, accent = 'brand' }) {
   const [asking, setAsking] = useState(false);
   return (
     <div className="h-[100dvh] flex flex-col bg-canvas safe-top">
@@ -23,7 +23,16 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, onEx
               {subtitle && <div className="text-xs font-bold text-ink-muted truncate">{subtitle}</div>}
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">{stats}</div>
+          <div className="ml-auto flex items-center gap-2">
+            {voice && (
+              <button type="button" onClick={voice.onToggle} aria-pressed={voice.on} aria-label={voice.on ? 'Turn voice off' : 'Turn voice on'}
+                className={`press h-12 px-3.5 rounded-2xl border flex items-center gap-1.5 font-extrabold card-shadow ${voice.on ? 'bg-brand-50 border-brand-200 text-brand-700' : 'bg-white border-line text-ink-muted'}`}>
+                {voice.on ? <Volume2 size={22} /> : <VolumeX size={22} />}
+                <span className="text-sm">{voice.on ? 'Voice on' : 'Voice off'}</span>
+              </button>
+            )}
+            {stats}
+          </div>
         </div>
         {progress !== undefined && (
           <div className="mt-3 h-3 rounded-full bg-line overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
@@ -35,7 +44,7 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, onEx
         <section className="flex-1 min-h-0 scroll-y rounded-[28px] bg-white/60 border border-line px-5 py-6 flex">
           <div className="m-auto w-full">{problem}</div>
         </section>
-        <aside className="shrink-0 landscape:w-[min(400px,42vw)] portrait:w-full landscape:scroll-y flex flex-col gap-3 justify-end landscape:justify-center">
+        <aside className="shrink-0 landscape:w-[min(400px,42vw)] portrait:w-full landscape:scroll-y flex flex-col gap-3 justify-end landscape:justify-center-safe">
           {dock}
         </aside>
       </main>

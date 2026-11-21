@@ -7,6 +7,7 @@
  */
 import { rand, pick, sample, shuffle, chance, gcd, lcm, round, distinctInts } from '../lib/rng.js';
 import { NAMES, makeChoices } from './shared.js';
+import { themed12, middleEarthOn, THEME_RATE } from './middleEarth.js';
 
 const L = (d) => (d === 'easy' || d === 'challenge' ? d : 'standard');
 const by = (d, e, s, c) => (d === 'easy' ? e : d === 'challenge' ? c : s);
@@ -1033,6 +1034,8 @@ export default {
   accent: 'indigo',
   allowRetry: false,
   bigInput: false,
+  readAloud: false,
+  keypad: 'full',
   topics: [
     { id: 'add', label: 'Addition', group: 'Operations', modes: ['flash', 'worksheet', 'story'] },
     { id: 'sub', label: 'Subtraction', group: 'Operations', modes: ['flash', 'worksheet', 'story'] },
@@ -1070,6 +1073,10 @@ export default {
 
   generate(mode, topic, difficulty = 'standard') {
     const d = L(difficulty);
+    if (middleEarthOn() && chance(THEME_RATE)) {
+      const themed = themed12(mode, topic, d);
+      if (themed) return themed;
+    }
     if (ARITH[topic]) return mode === 'story' ? arithmeticStory(topic, d) : ARITH[topic](mode, d);
     switch (topic) {
       case 'integers': return integers(mode, d);

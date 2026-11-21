@@ -14,6 +14,7 @@ import { setSoundEnabled, setVoiceEnabled, unlockAudio, audioReady, stopSpeaking
 import { starsFor, practiceStreakDays } from './lib/diagnostics.js';
 import { topicsForMode } from './lib/session.js';
 import { uid } from './lib/rng.js';
+import { setMiddleEarth } from './curriculum/middleEarth.js';
 
 export default function App() {
   const [settings, setSettings] = useState(loadSettings);
@@ -21,7 +22,7 @@ export default function App() {
   const [view, setView] = useState({ name: 'home' });
   const [setupMode, setSetupMode] = useState(null);
 
-  useEffect(() => { saveSettings(settings); setSoundEnabled(settings.sound); setVoiceEnabled(settings.voice); }, [settings]);
+  useEffect(() => { saveSettings(settings); setSoundEnabled(settings.sound); setVoiceEnabled(settings.voice); setMiddleEarth(settings.middleEarth !== false); }, [settings]);
   useEffect(() => { saveSessions(sessions); }, [sessions]);
 
   // Safari: audio may only start inside a user-activation event (touchend / click / keydown),
@@ -80,7 +81,7 @@ export default function App() {
   /* ------------------------------ routing ------------------------------ */
   if (view.name === 'play') {
     const cur = getCurriculum(view.age);
-    const props = { curriculum: cur, config: view.config, onFinish: finishSession, onExit: () => setView({ name: 'home' }), settings };
+    const props = { curriculum: cur, config: view.config, onFinish: finishSession, onExit: () => setView({ name: 'home' }), settings, onToggleVoice: () => patchSettings({ voice: !settings.voice }) };
     if (view.mode === 'flash') return <FlashCards key={view.key} {...props} />;
     if (view.mode === 'worksheet') return <Worksheet key={view.key} {...props} />;
     return <Runner key={view.key} mode={view.mode} {...props} />;

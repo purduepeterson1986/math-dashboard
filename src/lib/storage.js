@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS = {
   studentName: '',
   sound: true,
   voice: true,
+  middleEarth: true,
   pin: null,
   filters: {}, // { [age]: { [mode]: { topics: [...], difficulty, count, seconds } } }
 };

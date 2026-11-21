@@ -1,7 +1,7 @@
 # Lumen Math Lab
 
 An iPad-first homeschool math & STEM dashboard (React + Vite + Tailwind CSS + Lucide).
-Ages 3 and 12 are fully built; ages 4–11 and 13–18 show a "coming soon" module and plug in
+Ages 3, 5, 7 and 12 are fully built; the other ages show a "coming soon" module and plug in
 by adding `src/curriculum/ageN.js` (see `PLAN.md` for the contract).
 
 ## Run locally
@@ -22,6 +22,14 @@ npm run build        # production build into dist/
 The build uses relative asset paths (`base: './'`), so it works at `https://<user>.github.io/<repo>/`
 without any configuration. On the iPad, open the site in Safari → Share → **Add to Home Screen**
 for a full-screen app.
+
+## Middle-earth questions
+
+About half of the questions in topics that have a themed version use Lord of the Rings characters
+and stories: who is taller, counting hobbits, character patterns, Bilbo's party, the Fellowship's
+journey and more. Ages 3 and 5 show pictures of the Fellowship. These are the same drawings as the
+Middle Earth game, imported by `scripts/extract-middle-earth-art.mjs`. The theme can be turned off
+in Parent Portal → Settings.
 
 ## Offline use
 

@@ -14,8 +14,10 @@ public/icon.svg
 src/
   main.jsx, App.jsx, index.css
   curriculum/
-    index.js        registry {3: age3, 12: age12}, age metadata, mode list
+    index.js        registry {3: age3, 5: age5, 7: age7, 12: age12}, age metadata, mode list
     age3.js         Age 3 topics + generators (all 5 modes)
+    age5.js         Age 5 (Kindergarten) topics + generators
+    age7.js         Age 7 (2nd grade) topics + generators
     age12.js        Age 12 topics + generators (all 5 modes)
     shared.js       choice builders, names, emoji banks
   lib/
@@ -51,6 +53,9 @@ Each `src/curriculum/ageN.js` default-exports:
   expectedMs: { flash, worksheet, story, stem, mix }, allowRetry,
   generate(mode, topicId, difficulty) -> Question }
 ```
+
+Flags per age: `bigInput` (large tap cards, celebrations), `readAloud` (voice + voice toggle),
+`allowRetry` (second try before the answer is shown), `keypad: 'simple' | 'full'` (whole numbers only vs. fractions/decimals/negatives).
 
 Question: `{ key, topic, prompt, display?, story?, visual?, input: 'keypad'|'kidpad'|'choice',
 choices?, answer, answerLabel, hints?, explanation, speak?, mustSimplify? }`.

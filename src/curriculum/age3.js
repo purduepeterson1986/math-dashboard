@@ -4,7 +4,8 @@
  * (adding & taking away within 10, ABC/AABB patterns, counting backwards, shape attributes).
  */
 import { rand, pick, sample, shuffle, chance, distinctInts } from '../lib/rng.js';
-import { COLORS, NAMES, makeChoices, plural } from './shared.js';
+import { COLORS, NAMES, makeChoices, plural, distinctShape } from './shared.js';
+import { themed3, middleEarthOn, THEME_RATE } from './middleEarth.js';
 
 const CRITTERS = [
   { e: '🐶', one: 'puppy', many: 'puppies' }, { e: '🐱', one: 'kitty', many: 'kitties' },
@@ -70,7 +71,7 @@ function counting(topic, mode, d, lo, hi) {
     );
     return {
       key: `${topic}:find:${t.e}:${n}`, topic, input: 'choice', choices, answer, answerLabel: `${n}`,
-      prompt: `Tap the group with ${n}`, display: String(n), speak: `Tap the group with ${n} ${n === 1 ? t.one : t.many}.`,
+      prompt: `Tap the group with ${n}`, display: String(n), hideDisplay: true, speak: `Tap the group with ${n} ${n === 1 ? t.one : t.many}.`,
       summary: `Find the group of ${n}`, explanation: `That group has ${n}.`,
     };
   }
@@ -158,7 +159,7 @@ function shapes(mode, d) {
 
   if (fmt === 'real') {
     const r = pick(REAL_SHAPES.filter((x) => pool.includes(x.shape)));
-    const others = sample(pool.filter((s) => s !== r.shape), nOpts - 1);
+    const others = sample(pool.filter((s) => distinctShape(r.shape, s)), nOpts - 1);
     const { choices, answer } = makeChoices(
       { visual: { type: 'shape', shape: r.shape, color: pickColor() } },
       others.map((s) => ({ visual: { type: 'shape', shape: s, color: pickColor() } })),
@@ -194,7 +195,7 @@ function shapes(mode, d) {
     const odd = pick(pool.filter((s) => s !== main));
     const { choices, answer } = makeChoices(
       { visual: { type: 'shape', shape: odd, color: pickColor() } },
-      [0, 1, 2].map(() => ({ visual: { type: 'shape', shape: main, color: pickColor(), size: pick([0.7, 0.85, 1]) } })),
+      sample(colorNames, 3).map((c, k) => ({ visual: { type: 'shape', shape: main, color: c, size: [0.7, 0.85, 1][k] } })),
     );
     return {
       key: `${topic}:odd:${main}:${odd}`, topic, input: 'choice', choices, answer, answerLabel: SHAPE_NAMES[odd],
@@ -203,7 +204,7 @@ function shapes(mode, d) {
     };
   }
   const target = pick(pool);
-  const others = sample(pool.filter((s) => s !== target), nOpts - 1);
+  const others = sample(pool.filter((s) => distinctShape(target, s)), nOpts - 1);
   if (fmt === 'match') {
     const c = pickColor();
     const { choices, answer } = makeChoices(
@@ -390,6 +391,8 @@ export default {
   accent: 'amber',
   allowRetry: true,
   bigInput: true,
+  readAloud: true,
+  keypad: 'simple',
   topics: [
     { id: 'count5', label: 'Counting 1–5', group: 'Numbers', icon: 'Hand', modes: ALL },
     { id: 'count10', label: 'Counting 6–10', group: 'Numbers', icon: 'Grid3x3', modes: ALL },
@@ -419,6 +422,10 @@ export default {
 
   generate(mode, topic, difficulty = 'ready') {
     const d = lvl(difficulty);
+    if (middleEarthOn() && chance(THEME_RATE)) {
+      const themed = themed3(mode, topic, d);
+      if (themed) return themed;
+    }
     switch (topic) {
       case 'count5': return counting('count5', mode, d, 1, 5);
       case 'count10': return counting('count10', mode, d, 6, 10);

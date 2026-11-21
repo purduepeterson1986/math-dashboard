@@ -9,8 +9,10 @@ import { checkAnswer } from '../lib/answer.js';
 import { sfx } from '../lib/audio.js';
 import { MathText } from '../components/Visual.jsx';
 
-export default function FlashCards({ curriculum, config, onFinish, onExit, settings }) {
+export default function FlashCards({ curriculum, config, onFinish, onExit, settings, onToggleVoice }) {
   const big = curriculum.bigInput;
+  const talk = !!curriculum.readAloud;
+  const simple = curriculum.keypad === 'simple';
   const seconds = config.seconds || curriculum.defaults.flash.seconds;
   const maxCards = config.maxCards || curriculum.defaults.flash.maxCards;
   const next = useMemo(() => createQuestionStream(curriculum, 'flash', config), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -82,7 +84,7 @@ export default function FlashCards({ curriculum, config, onFinish, onExit, setti
       setValue('');
       setState('idle');
       qStart.current = performance.now();
-    }, ok ? (big ? 650 : 280) : 1300);
+    }, ok ? (big ? 1200 : 280) : (big ? 2500 : 1300));
   };
 
   const remaining = Math.max(0, seconds * 1000 - elapsed);
@@ -109,6 +111,7 @@ export default function FlashCards({ curriculum, config, onFinish, onExit, setti
       progress={remaining / (seconds * 1000)}
       accent={secsLeft <= 10 ? 'bad' : 'brand'}
       onExit={onExit}
+      voice={talk ? { on: settings.voice, onToggle: onToggleVoice } : null}
       stats={(
         <>
           <StatPill tone={streak >= 3 ? 'warn' : 'default'} pulse={pulse} icon={<Flame size={20} className={streak >= 3 ? 'text-warn' : 'text-ink-muted'} />}>{streak}<span className="text-xs font-bold text-ink-muted ml-1 hidden sm:inline">best {best}</span></StatPill>
@@ -117,7 +120,7 @@ export default function FlashCards({ curriculum, config, onFinish, onExit, setti
       )}
       problem={(
         <div className="relative">
-          <ProblemView q={q} big={big} autoSpeak={big && settings.voice} />
+          <ProblemView q={q} big={big} autoSpeak={talk && settings.voice} voiceOn={talk && settings.voice} />
           {state !== 'idle' && (
             <div className={`mt-5 mx-auto w-fit rounded-2xl px-5 py-3 font-extrabold text-xl animate-pop flex items-center gap-2 ${state === 'correct' ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad'}`}>
               {state === 'correct' ? <><Check size={24} strokeWidth={3} /> {big ? 'Great job!' : 'Correct'}</> : <>Answer: <MathText text={q.answerLabel} /></>}
@@ -125,7 +128,7 @@ export default function FlashCards({ curriculum, config, onFinish, onExit, setti
           )}
         </div>
       )}
-      dock={<AnswerPanel q={q} value={value} onChange={setValue} onSubmit={submit} state={state} disabled={state !== 'idle'} big={big} submitLabel="Go" compact={!big} />}
+      dock={<AnswerPanel q={q} value={value} onChange={setValue} onSubmit={submit} state={state} disabled={state !== 'idle'} big={big} simple={simple} submitLabel="Go" compact={!big} />}
       footer={<StarBurst key={burst} show={burst > 0 && state === 'correct'} />}
     />
   );

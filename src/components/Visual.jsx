@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { COLORS } from '../curriculum/shared.js';
+import { Clock, Coins, Ruler, CubeMeasure, Stick, ArrayGrid, Base10, FractionShape, BarGraph, NumberBond, Character, Lineup, Crowd } from './VisualsEarly.jsx';
 
 /* ---------------------------- MathText ---------------------------- */
 /** Renders strings containing [[n/d]] tokens as stacked fractions. */
@@ -118,7 +119,15 @@ function Objects({ v, size }) {
 }
 
 function TenFrame({ count, size }) {
-  const cell = size === 'lg' ? 64 : 48;
+  const frames = Math.max(1, Math.ceil(count / 10));
+  if (frames > 1) {
+    return (
+      <div className="flex flex-wrap justify-center gap-3">
+        {Array.from({ length: frames }, (_, f) => <TenFrame key={f} count={Math.min(10, count - f * 10)} size={frames > 2 || size !== 'lg' ? 'sm' : 'md'} />)}
+      </div>
+    );
+  }
+  const cell = size === 'lg' ? 64 : size === 'md' ? 52 : 34;
   return (
     <div className="inline-grid grid-cols-5 border-4 border-ink/70 rounded-lg overflow-hidden bg-white">
       {Array.from({ length: 10 }, (_, i) => (
@@ -377,6 +386,20 @@ export default function Visual({ v, size = 'lg' }) {
     case 'shape': return <ShapeSVG shape={v.shape} color={v.color} size={v.size || 1} rotate={v.rotate} px={S.shape} />;
     case 'sized': return <span className="leading-none select-none inline-flex items-end justify-center" style={{ fontSize: S.emoji * 1.9 * v.scale, height: S.emoji * 1.9 }}>{v.emoji}</span>;
     case 'tenframe': return <TenFrame count={v.count} size={size} />;
+    case 'clock': return <Clock h={v.h} m={v.m} px={size === 'lg' ? 240 : size === 'md' ? 210 : 110} />;
+    case 'coins': return <Coins coins={v.coins} small={size === 'sm'} />;
+    case 'ruler': return <Ruler {...v} />;
+    case 'cubes': return <CubeMeasure length={v.length} emoji={v.emoji} />;
+    case 'stick': return <Stick len={v.len} color={v.color} />;
+    case 'array': return <ArrayGrid rows={v.rows} cols={v.cols} emoji={v.emoji} count={v.count} />;
+    case 'base10': return <Base10 hundreds={v.hundreds} tens={v.tens} ones={v.ones} />;
+    case 'fracshape': return <FractionShape parts={v.parts} shaded={v.shaded} kind={v.kind} px={size === 'lg' ? 150 : size === 'md' ? 120 : 90} />;
+    case 'bargraph': return <BarGraph items={v.items} step={v.step} title={v.title} />;
+    case 'numberbond': return <NumberBond whole={v.whole} parts={v.parts} />;
+    case 'character': return <Character id={v.id} px={v.px || (size === 'lg' ? 170 : size === 'md' ? 130 : 96)} toScale={v.toScale} label={v.label} />;
+    case 'lineup': return <Lineup ids={v.ids} px={size === 'sm' ? 120 : 200} labels={v.labels !== false} />;
+    case 'crowd': return <Crowd ids={v.ids} size={size} px={v.px} toScale={v.toScale} />;
+    case 'emojiset': return <div className="flex flex-wrap justify-center gap-2 max-w-[480px]" style={{ fontSize: size === 'lg' ? 48 : 34 }}>{v.items.map((e, i) => <span key={i} className="leading-none">{e}</span>)}</div>;
     case 'pattern':
       return (
         <div className="flex flex-wrap items-center justify-center gap-2">

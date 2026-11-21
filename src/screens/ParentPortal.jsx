@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, LayoutDashboard, History, Award, Settings, Download, Upload, Trash2, CheckCircle2, TrendingUp,
-  AlertCircle, Circle, Crosshair, ChevronDown, Check, X, KeyRound, Volume2, Mic, User, Lightbulb,
+  AlertCircle, Circle, Crosshair, ChevronDown, Check, X, KeyRound, Volume2, Mic, User, Lightbulb, Mountain,
 } from 'lucide-react';
 import ModeIcon from '../components/ModeIcon.jsx';
 import Modal from '../components/Modal.jsx';
@@ -316,7 +316,8 @@ function SettingsTab({ settings, sessions, onSettings, onSessions }) {
           className="w-full h-14 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" placeholder="e.g. Maya" />
         <div className="mt-4 divide-y divide-line">
           <Toggle on={settings.sound} onClick={() => onSettings({ sound: !settings.sound })} icon={<Volume2 size={20} />} label="Sound effects" desc="Taps, correct/incorrect chimes, celebrations" />
-          <Toggle on={settings.voice} onClick={() => onSettings({ voice: !settings.voice })} icon={<Mic size={20} />} label="Read aloud (Age 3)" desc="Speaks each question for pre-readers" />
+          <Toggle on={settings.voice} onClick={() => onSettings({ voice: !settings.voice })} icon={<Mic size={20} />} label="Read aloud (Ages 3 & 5)" desc="Speaks each question for pre-readers" />
+          <Toggle on={settings.middleEarth !== false} onClick={() => onSettings({ middleEarth: settings.middleEarth === false })} icon={<Mountain size={20} />} label="Middle-earth questions" desc="Mixes Lord of the Rings characters and stories into the questions" />
         </div>
       </Card>
       <Card title="Parent PIN" icon={<KeyRound size={20} className="text-brand-600" />}>

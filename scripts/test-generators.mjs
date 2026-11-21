@@ -3,6 +3,8 @@
 import { CURRICULA } from '../src/curriculum/index.js';
 import { checkAnswer, parseValue } from '../src/lib/answer.js';
 import { createQuestionStream } from '../src/lib/session.js';
+import { toSpeech } from '../src/lib/audio.js';
+import { THEMED } from '../src/curriculum/middleEarth.js';
 
 const MODES = ['flash', 'worksheet', 'story', 'stem'];
 let failures = 0;
@@ -17,7 +19,7 @@ for (const [age, cur] of Object.entries(CURRICULA)) {
         for (let i = 0; i < 300; i++) {
           total++;
           let q;
-          try { q = cur.generate(mode, topic.id, diff); } catch (e) { fail(`throw ${age}/${topic.id}/${mode}/${diff}: ${e.message}`, {}); break; }
+          try { q = (i % 3 === 0 && THEMED[age] && THEMED[age](mode, topic.id, diff)) || cur.generate(mode, topic.id, diff); } catch (e) { fail(`throw ${age}/${topic.id}/${mode}/${diff}: ${e.message}`, {}); break; }
           if (!q) { fail(`null ${age}/${topic.id}/${mode}/${diff}`, {}); break; }
           if (!q.key || q.topic !== topic.id) fail(`key/topic ${age}/${topic.id}/${mode}`, q);
           const text = [q.prompt, q.display, q.explanation, q.answerLabel, ...(q.hints || []), ...(q.choices || []).map((c) => c.text || '')].join(' ');
@@ -28,15 +30,31 @@ for (const [age, cur] of Object.entries(CURRICULA)) {
             if (!q.choices.some((c) => c.id === q.answer)) fail('answer not in choices', q);
             const texts = q.choices.map((c) => c.text).filter(Boolean);
             if (new Set(texts).size !== texts.length) fail(`duplicate choice text ${topic.id}`, q);
+            const vals = texts.map((t) => { const m = t.match(/^\[\[(\d+)\/(\d+)\]\]$/); return m ? Number(m[1]) / Number(m[2]) : null; }).filter((v) => v !== null);
+            if (new Set(vals.map((v) => v.toFixed(9))).size !== vals.length) fail(`equal-value fraction choices ${age}/${topic.id}`, q);
             if (!checkAnswer(q.answer, q)) fail('choice self-check', q);
+            if (q.choices.every((c) => !c.text)) {
+              const vis = q.choices.map((c) => JSON.stringify(c.visual));
+              if (new Set(vis).size !== vis.length) fail(`duplicate picture choices ${age}/${topic.id}`, q);
+            }
           } else {
             const v = parseValue(q.answer);
             if (v === null || !Number.isFinite(v)) fail(`answer unparsable ${age}/${topic.id}/${mode}/${diff}`, q);
             if (!checkAnswer(q.answer, q)) fail(`self-check ${age}/${topic.id}/${mode}/${diff}`, q);
             if (q.input === 'kidpad' && (v < 0 || v > 10 || !Number.isInteger(v))) fail('kidpad out of range', q);
             if (String(q.answer).length > 14) fail('answer too long', q);
+            if (cur.keypad === 'simple' && !/^\d+$/.test(String(q.answer))) fail(`simple keypad needs whole-number answer ${age}/${topic.id}`, q);
           }
           if (q.visual?.type === 'objects' && (q.visual.count < 0 || q.visual.count > 20)) fail('objects count', q);
+          if (cur.readAloud) {
+            if (!q.speak) fail(`missing speak ${age}/${topic.id}/${mode}`, q);
+            else if (/\[\[|[×÷−=<>+]|NaN|undefined/.test(q.speak)) fail(`speak has symbols ${age}/${topic.id}`, q);
+            for (const said of [q.explanation, ...(q.hints || [])]) {
+              if (said && /\[\[|[×÷−=<>+]/.test(toSpeech(said))) fail(`spoken text has symbols ${age}/${topic.id}: ${toSpeech(said)}`, q);
+            }
+          }
+          (q.choices || []).forEach((c) => { if (c.visual?.type === 'objects' && c.visual.count > 10) fail('choice card with >10 objects', q); });
+          if (q.visual?.type === 'clock' && !(q.visual.h >= 1 && q.visual.h <= 12 && q.visual.m >= 0 && q.visual.m < 60)) fail('bad clock', q);
         }
       }
     }

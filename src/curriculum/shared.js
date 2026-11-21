@@ -21,5 +21,8 @@ export function makeChoices(correct, distractors) {
   return { choices, answer };
 }
 
+/** Can `other` be a wrong answer when the right answer is `target`? (A square is also a rectangle and a rhombus.) */
+export const distinctShape = (target, other) => other !== target && !(other === 'square' && (target === 'rectangle' || target === 'diamond'));
+
 /** Plural helper: plural(3,'apple') -> '3 apples' */
 export const plural = (n, word, pl) => `${n} ${n === 1 ? word : pl || `${word}s`}`;

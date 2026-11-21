@@ -10,8 +10,10 @@ import { buildQuestionSet, makeRecord } from '../lib/session.js';
 import { checkAnswer, givenLabel } from '../lib/answer.js';
 import { sfx } from '../lib/audio.js';
 
-export default function Worksheet({ curriculum, config, onFinish, onExit, settings }) {
+export default function Worksheet({ curriculum, config, onFinish, onExit, settings, onToggleVoice }) {
   const big = curriculum.bigInput;
+  const talk = !!curriculum.readAloud;
+  const simple = curriculum.keypad === 'simple';
   const count = config.count || curriculum.defaults.worksheet.count;
   const questions = useMemo(() => buildQuestionSet(curriculum, 'worksheet', config, count), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [idx, setIdx] = useState(0);
@@ -127,7 +129,7 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
 
   const onPickAndAdvance = (v) => {
     setAnswer(v);
-    if (big && idx < count - 1) setTimeout(() => go(idx + 1), 450);
+    if (big && q.input !== 'keypad' && idx < count - 1) setTimeout(() => go(idx + 1), 450);
   };
 
   return (
@@ -137,15 +139,16 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
       icon={<span className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center"><ClipboardList size={22} /></span>}
       progress={answeredCount / count}
       onExit={onExit}
+      voice={talk ? { on: settings.voice, onToggle: onToggleVoice } : null}
       stats={<StatPill tone="brand">#{idx + 1}<span className="text-ink-muted font-bold">/{count}</span></StatPill>}
       problem={(
         <div className="flex flex-col gap-6">
-          <ProblemView q={q} big={big} autoSpeak={big && settings.voice} />
+          <ProblemView q={q} big={big} autoSpeak={talk && settings.voice} voiceOn={talk && settings.voice} />
         </div>
       )}
       dock={(
         <>
-          <AnswerPanel q={q} value={answers[idx]} onChange={big ? onPickAndAdvance : setAnswer} instant={false} big={big}
+          <AnswerPanel q={q} value={answers[idx]} onChange={big ? onPickAndAdvance : setAnswer} instant={false} big={big} simple={simple}
             onSubmit={() => (idx < count - 1 ? go(idx + 1) : toReview())} submitLabel={idx < count - 1 ? 'Next' : 'Review'} compact />
           <div className="flex gap-2">
             <button type="button" onClick={() => go(idx - 1)} disabled={idx === 0} aria-label="Previous problem" className="press h-14 w-14 rounded-2xl bg-white border border-line flex items-center justify-center disabled:opacity-35"><ChevronLeft size={26} /></button>

@@ -69,21 +69,54 @@ export const sfx = {
   warn() { if (enabled) tone(440, 0, 0.08, { type: 'square', gain: 0.04 }); },
 };
 
-export function speak(text) {
-  if (!voiceEnabled || !text) return;
+let speakToken = 0;
+
+/** Turn math symbols into words for the voice: "6 − 1 = 5" → "6 minus 1 equals 5". */
+export function toSpeech(text) {
+  return String(text || '')
+    .replace(/\[\[(-?\d+)\/(\d+)\]\]/g, '$1 over $2')
+    .replace(/(\d)\s*[−-]\s*(?=\d|\?)/g, '$1 minus ')
+    .replace(/\s*\+\s*/g, ' plus ')
+    .replace(/\s*=\s*/g, ' equals ')
+    .replace(/\s*×\s*/g, ' times ')
+    .replace(/\s*÷\s*/g, ' divided by ')
+    .replace(/(^|\s)\?(?=\s|$)/g, '$1what number')
+    .replace(/(\d+)¢/g, '$1 cents')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Read text aloud. Pass an array to speak each part as its own phrase with a clear
+ * pause between them, e.g. speak(['Brilliant!', '2 is more than 1.']).
+ */
+export function speak(text, { gap = 600 } = {}) {
+  // Each sentence is its own phrase, so "What shape is the baseball? Tap the matching shape."
+  // is read as two sentences with a pause between them.
+  const parts = (Array.isArray(text) ? text : [text])
+    .flatMap((t) => toSpeech(t).split(/(?<=[.!?])\s+(?=\S)/))
+    .map((t) => t.trim())
+    .filter(Boolean);
+  if (!voiceEnabled || !parts.length) return;
   try {
     const synth = window.speechSynthesis;
     if (!synth) return;
     synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.9;
-    u.pitch = 1.15;
+    const token = ++speakToken;
     const voices = synth.getVoices();
     const preferred = voices.find((v) => /en-US/i.test(v.lang) && /Samantha|Karen|Moira|Google US/i.test(v.name))
       || voices.find((v) => /^en/i.test(v.lang));
-    if (preferred) u.voice = preferred;
-    synth.speak(u);
+    const sayPart = (i) => {
+      if (token !== speakToken || i >= parts.length) return;
+      const u = new SpeechSynthesisUtterance(parts[i]);
+      u.rate = 0.9;
+      u.pitch = 1.15;
+      if (preferred) u.voice = preferred;
+      u.onend = () => setTimeout(() => sayPart(i + 1), gap);
+      synth.speak(u);
+    };
+    sayPart(0);
   } catch { /* ignore */ }
 }
-export function stopSpeaking() { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }
+export function stopSpeaking() { speakToken++; try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }
 export const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
