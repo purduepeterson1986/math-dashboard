@@ -227,7 +227,7 @@ export function time(mode, d) {
   const topic = 'time';
   const h = rand(1, 12);
   const m = d === 'easy' ? pick([0, 15, 30, 45]) : d === 'standard' ? 5 * rand(0, 11) : rand(0, 59);
-  if (mode === 'story' || (mode === 'stem' && d !== 'easy')) {
+  if (mode === 'story' || (mode === 'stem' && d !== 'easy') || (mode === 'flash' && d === 'challenge') || (mode === 'worksheet' && d === 'challenge' && chance(0.5))) {
     const dur = pick(by(d, [30, 60], [15, 30, 45, 60, 90], [25, 35, 50, 75, 105]));
     const sm = 5 * rand(0, 11);
     const [eh, em] = addMin(h, sm, dur);
@@ -262,7 +262,7 @@ export function measure(mode, d) {
     return kp({ key: `meas:story:${a}:${b}:${T[1]}`, topic, story: { emoji: T[0], title: T[1] }, prompt: T[2], answer: T[3], hints: ['Is it getting longer or shorter? Add or subtract.'],
       explanation: `The answer is ${T[3]} ${u}.` });
   }
-  const len = rand(2, by(d, 6, 9, 9)); const start = d === 'challenge' ? rand(1, 3) : 0;
+  const len = rand(by(d, 2, 4, 6), by(d, 6, 9, 12)); const start = d === 'challenge' ? rand(1, 3) : 0;
   return kp({ key: `meas:ruler:${len}:${start}:${unit}`, topic, prompt: `How long is the pencil in ${unit === 'in' ? 'inches' : 'centimeters'}?`,
     visual: { type: 'ruler', length: len, start, unit }, answer: len,
     hints: start ? [`It doesn't start at 0! It starts at ${start}.`, 'Subtract the start from the end.'] : ['Read the number at the tip of the pencil.'],

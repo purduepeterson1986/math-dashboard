@@ -5,6 +5,7 @@ import { checkAnswer, parseValue } from '../src/lib/answer.js';
 import { createQuestionStream } from '../src/lib/session.js';
 import { toSpeech } from '../src/lib/audio.js';
 import { THEMED } from '../src/curriculum/middleEarth.js';
+import { auditLevels } from './level-audit-lib.mjs';
 
 const MODES = ['flash', 'worksheet', 'story', 'stem'];
 let failures = 0;
@@ -84,6 +85,14 @@ const cases = [
   ['3.0', kq('3.14', { tolerance: 0.05 }), false], ['3.15', kq('3.14', { tolerance: 0.05 }), true], ['-3/4', kq('-0.75'), true], ['2/1', kq('2', { mustSimplify: true }), false],
 ];
 for (const [g, q, want] of cases) { total++; if (checkAnswer(g, q) !== want) fail(`checkAnswer(${g}, ${q.answer}) != ${want}`, q); }
+
+// Levels must feel different: no topic may serve (nearly) the same questions at two levels.
+// (Run `node scripts/audit-levels.mjs <age> --show` to read samples when this fails.)
+{
+  const { weak, compared } = auditLevels({ N: 800 });
+  total += compared;
+  for (const w of weak) fail(`levels too alike ${w.age}/${w.topic}/${w.mode}${w.themed ? '/themed' : ''} ${w.pair}`, w);
+}
 
 if (failures) console.error(kinds);
 console.log(`${total} checks, ${failures} failures`);

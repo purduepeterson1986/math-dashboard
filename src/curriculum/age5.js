@@ -53,9 +53,9 @@ function choose(o, correct, wrong) {
 const bigNum = (n) => ({ text: String(n), big: true });
 
 /* ------------------------------ Counting ------------------------------ */
-export function count20(mode, d) {
+export function count20(mode, d, range) {
   const topic = 'count20';
-  const [lo, hi] = by(d, [6, 12], [11, 20], [18, 45]);
+  const [lo, hi] = range || by(d, [6, 12], [11, 20], [18, 45]);
   const n = rand(lo, hi);
   const t = pick(THINGS);
   const fmt = mode === 'stem' ? pick(['countOn', 'frames']) : mode === 'story' ? 'story' : n > 20 ? 'frames' : pick(['how', 'how', 'frames']);
@@ -91,7 +91,7 @@ export function count20(mode, d) {
 /* --------------------------- Teens / tens & ones --------------------------- */
 export function teens(mode, d) {
   const topic = 'teens';
-  if (d === 'stretch' || (mode === 'stem' && chance(0.5))) {
+  if (d === 'stretch' || (mode === 'stem' && d === 'ready' && chance(0.5))) {
     const tens = rand(2, 9); const ones = rand(0, 9); const n = tens * 10 + ones;
     if (chance(0.5)) {
       return num({ key: `${topic}:to:${n}`, topic, answer: n, prompt: `${tens} tens and ${ones} ones. What number is it?`, visual: { type: 'base10', tens, ones },
@@ -102,8 +102,8 @@ export function teens(mode, d) {
       speak: `How many tens are in the number ${n}?`, hints: [`The first digit of ${n} tells the tens.`],
       summary: `Tens in ${n}`, explanation: `${n} is ${tens} tens and ${ones} ones.` });
   }
-  const ones = rand(1, 9); const n = 10 + ones;
-  if (mode === 'flash' || chance(0.5)) {
+  const ones = rand(1, d === 'gentle' ? 5 : 9); const n = 10 + ones;
+  if (d === 'gentle' || mode === 'flash' || chance(0.5)) {
     return num({ key: `${topic}:ten+:${ones}`, topic, answer: n, prompt: `10 and ${ones} more is…`, display: `10 + ${ones}`, visual: { type: 'tenframe', count: n },
       speak: `10 and ${ones} more is what number?`, summary: `10 and ${ones}`, explanation: `10 and ${ones} more makes ${n}.` });
   }
@@ -120,8 +120,8 @@ const STORY_ADD = [
 ];
 export function addition(mode, d) {
   const topic = 'add';
-  const max = by(d, 10, 10, 20);
-  let a = rand(by(d, 1, 0, 3), by(d, 6, 9, 15)); let b = rand(by(d, 1, 0, 2), max - a);
+  const max = by(d, 6, 10, 20);
+  let a = rand(by(d, 1, 0, 3), by(d, 4, 9, 15)); let b = rand(by(d, 1, 0, 2), max - a);
   if (d === 'stretch' && a + b < 11) { a = rand(6, 10); b = rand(11 - a, Math.min(10, 20 - a)); }
   const s = a + b;
   const t = pick(THINGS);
@@ -174,10 +174,10 @@ export function subtraction(mode, d) {
 }
 
 /* ------------------------------ Make 10 ------------------------------ */
-export function bonds(mode, d) {
+export function bonds(mode, d, wholes) {
   const topic = 'bonds';
-  const whole = d === 'gentle' ? pick([5, 6, 7]) : d === 'stretch' ? pick([10, 12, 15, 20]) : pick([10, 10, 8, 9]);
-  const part = rand(1, whole - 1);
+  const whole = wholes ? pick(wholes) : d === 'gentle' ? pick([5, 6, 7]) : d === 'stretch' ? pick([10, 12, 15, 20]) : pick([10, 10, 8, 9]);
+  const part = whole >= 50 ? 10 * rand(1, whole / 10 - 1) : rand(1, whole - 1);
   const missingRight = chance(0.5);
   if (mode === 'flash' || chance(0.4)) {
     return num({ key: `${topic}:frame:${whole}:${part}`, topic, answer: whole - part,
@@ -227,10 +227,11 @@ export function compare(mode, d) {
 }
 
 /* ----------------------------- Skip counting ----------------------------- */
-export function skip(mode, d) {
+export function skip(mode, d, steps) {
   const topic = 'skip';
   let step; let start; let back = false;
-  if (d === 'gentle') { step = pick([1, 10]); start = step === 10 ? 10 : rand(3, 14); }
+  if (steps) { step = pick(steps); start = step === 10 ? 10 * rand(1, 3) : rand(3, 14); }
+  else if (d === 'gentle') { step = pick([1, 10]); start = step === 10 ? 10 : rand(3, 14); }
   else if (d === 'ready') { step = pick([2, 5, 10]); start = step * rand(1, 5); }
   else { step = pick([2, 5, 10, 10]); back = chance(0.35); start = step === 10 ? rand(1, 9) + 10 * rand(1, 4) : step * rand(2, 12); }
   const terms = [0, 1, 2, 3].map((i) => start + (back ? -1 : 1) * i * step);
@@ -246,8 +247,22 @@ export function skip(mode, d) {
 /* ------------------------------- Shapes ------------------------------- */
 export function shapes(mode, d) {
   const topic = 'shapes';
-  const fmt = mode === 'stem' ? pick(d === 'gentle' ? ['solid', 'sides'] : ['solid', 'sides', 'corners']) : mode === 'story' ? 'solid' : pick(['find', 'solid', 'find']);
+  let fmt = mode === 'stem' ? pick(d === 'gentle' ? ['solid', 'sides'] : ['solid', 'sides', 'corners']) : mode === 'story' ? 'solid' : pick(['find', 'solid', 'find']);
+  if (d === 'stretch' && mode !== 'flash' && chance(0.65)) fmt = 'riddle';
   const pool = by(d, SHAPES_2D.slice(0, 5), SHAPES_2D.slice(0, 7), SHAPES_2D);
+  if (fmt === 'riddle') {
+    const clues = [
+      ['triangle', 'I have 3 sides and 3 corners.'], ['square', 'I have 4 equal sides and 4 corners.'],
+      ['circle', 'I am round. I have no corners.'], ['hexagon', 'I have 6 sides and 6 corners.'],
+    ];
+    const [want, clue] = pick(clues);
+    const who = name();
+    const others = clues.map((c) => c[0]).filter((x) => x !== want);
+    return choose({ key: `${topic}:riddle:${want}`, topic, story: mode === 'story' ? { emoji: '🕵️', title: `${who}'s Shape Riddle` } : undefined,
+      prompt: `${clue} Which shape am I?`, speak: `${clue} Which shape am I?`, hints: ['Count the sides and corners of each shape.'],
+      answerLabel: want, summary: `Shape riddle: ${want}`, explanation: `${clue.replace('I have', 'A ' + want + ' has').replace('I am', 'A ' + want + ' is')}` },
+    { visual: { type: 'shape', shape: want, color: pick(colorNames) } }, others.map((x) => ({ visual: { type: 'shape', shape: x, color: pick(colorNames) } })));
+  }
   if (fmt === 'solid') {
     const solids = Object.keys(SOLIDS);
     const want = pick(solids);
@@ -279,7 +294,7 @@ export function shapes(mode, d) {
 const STICK_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f97316'];
 export function measure(mode, d) {
   const topic = 'measure';
-  const fmt = mode === 'story' ? pick(['heavier', 'diff']) : mode === 'stem' ? pick(by(d, ['cubes', 'longest'], ['cubes', 'longest', 'diff'], ['ruler', 'diff', 'cubes'])) : pick(by(d, ['longest', 'cubes'], ['cubes', 'longest', 'heavier'], ['ruler', 'cubes', 'diff']));
+  const fmt = mode === 'story' ? pick(by(d, ['heavier'], ['heavier', 'diff'], ['diff'])) : mode === 'stem' ? pick(by(d, ['cubes', 'longest'], ['cubes', 'longest', 'diff'], ['ruler', 'diff', 'cubes'])) : pick(by(d, ['longest', 'cubes'], ['cubes', 'longest', 'heavier'], ['ruler', 'cubes', 'diff']));
   if (fmt === 'cubes') {
     const len = rand(2, by(d, 6, 9, 10)); const e = pick(['🖍️', '✏️', '🖌️', '🥕']);
     return num({ key: `${topic}:cubes:${len}:${e}`, topic, answer: len, prompt: 'How many cubes long is it?', visual: { type: 'cubes', length: len, emoji: e },
@@ -357,7 +372,19 @@ export function time(mode, d) {
   const topic = 'time';
   const h = rand(1, 12);
   const m = d === 'gentle' ? 0 : d === 'ready' ? pick([0, 0, 30]) : pick([0, 30]);
-  if (mode === 'story' || (d === 'stretch' && mode === 'stem')) {
+  if (d === 'stretch' && (mode === 'story' || mode === 'stem')) {
+    // half an hour later (a first step into elapsed time)
+    const m0 = pick([0, 30]); const nh = m0 === 0 ? h : (h % 12) + 1; const nm = m0 === 0 ? 30 : 0;
+    const who = name();
+    const text = `${who} starts reading at the time on the clock. ${who} reads for half an hour. What time is it then?`;
+    const right = tstr(nh, nm);
+    const wrong = [tstr(h, m0), tstr((h % 12) + 1, m0), tstr(h, nm === 0 ? 30 : 0), tstr((h % 12) + 1, 30)].filter((x, i, arr) => x !== right && arr.indexOf(x) === i).slice(0, 2);
+    return choose({ key: `${topic}:half:${h}:${m0}`, topic, story: { emoji: '📖', title: 'Reading Time' }, prompt: text, speak: text, visual: { type: 'clock', h, m: m0 },
+      hints: ['Half an hour is 30 minutes. The long hand moves halfway around.'], summary: `Half an hour after ${tstr(h, m0)}`,
+      explanation: `Half an hour after ${tstr(h, m0)} is ${right}.` },
+    { text: right }, wrong.map((x) => ({ text: x })));
+  }
+  if (mode === 'story' || (d === 'ready' && mode === 'stem' && chance(0.5))) {
     const later = 1; const nh = (h % 12) + later;
     const who = name();
     const text = `${who} starts reading at the time on the clock. ${who} reads for 1 hour. What time is it then?`;
@@ -401,9 +428,9 @@ export default {
     { id: 'time', label: 'Telling Time', group: 'Shapes, Measuring & Time', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
-    { id: 'gentle', label: 'Warm-up', detail: 'Count to 12, add & subtract within 10, make 5, o’clock' },
+    { id: 'gentle', label: 'Warm-up', detail: 'Count to 10, add within 6 & subtract within 8, 10 and a few more, o’clock' },
     { id: 'ready', label: 'Advanced', detail: 'Count to 20, teen numbers, make 10, skip count by 2s/5s/10s, half hours' },
-    { id: 'stretch', label: 'Stretch', detail: '1st-grade reach: within 20, tens & ones to 99, < > =, inches, 1 hour later' },
+    { id: 'stretch', label: 'Stretch', detail: '1st-grade reach: within 20, tens & ones to 99, < > =, inches, shape riddles, half an hour later' },
   ],
   defaultDifficulty: 'ready',
   defaults: {

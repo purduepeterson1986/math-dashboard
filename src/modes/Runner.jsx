@@ -117,12 +117,13 @@ export default function Runner({ mode, curriculum, config, onFinish, onExit, set
 
   return (
     <PlayShell
+      level={`Age ${curriculum.age} · ${(curriculum.difficulties.find((x) => x.id === (config.difficulty || curriculum.defaultDifficulty)) || {}).label || ''}`}
       title={M.title}
       subtitle={`Problem ${idx + 1} of ${count}`}
       icon={<span className={`w-10 h-10 rounded-xl flex items-center justify-center ${M.cls}`}><Icon size={22} /></span>}
       progress={(idx + (answered ? 1 : 0)) / count}
       onExit={onExit}
-      scratch={curriculum.age >= 6 ? q.key : null}
+      scratch={curriculum.age >= 5 ? q.key : null}
       voice={talk ? { on: settings.voice, onToggle: onToggleVoice } : null}
       stats={<StatPill tone="good" icon={<CircleCheck size={20} />}>{correctSoFar}</StatPill>}
       problem={(

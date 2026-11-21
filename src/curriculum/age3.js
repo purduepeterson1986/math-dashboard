@@ -61,7 +61,8 @@ export function counting(topic, mode, d, lo, hi) {
   const t = pick(THINGS);
   const n = rand(lo, hi);
   const scatter = d === 'stretch' || chance(0.3);
-  const fmt = mode === 'stem' ? pick(['frame', 'find']) : mode === 'story' ? 'story' : pick(['howMany', 'howMany', 'find']);
+  let fmt = mode === 'stem' ? pick(['frame', 'find']) : mode === 'story' ? 'story' : pick(['howMany', 'howMany', 'find']);
+  if (d === 'stretch' && fmt === 'howMany' && chance(0.5)) fmt = 'frame';
 
   if (fmt === 'find') {
     const opts = distinctInts(3, Math.max(1, n - 3), Math.min(10, n + 3), [n]);
@@ -111,11 +112,11 @@ export function numerals(mode, d) {
 
   if (fmt === 'next' || fmt === 'back') {
     const back = fmt === 'back' && d !== 'gentle';
-    const start = back ? rand(4, Math.min(10, max)) : rand(1, Math.min(10, max) - 3);
+    const start = back ? rand(4, max) : rand(1, max - 3);
     const seq = back ? [start, start - 1, start - 2] : [start, start + 1, start + 2];
     const ans = back ? start - 3 : start + 3;
     return {
-      key: `${topic}:${back ? 'back' : 'next'}:${start}`, topic, input: 'kidpad', answer: ans, answerLabel: `${ans}`,
+      key: `${topic}:${back ? 'back' : 'next'}:${start}`, topic, input: ans > 10 ? 'keypad' : 'kidpad', answer: ans, answerLabel: `${ans}`,
       prompt: back ? 'Counting down! What comes next?' : 'What number comes next?',
       visual: { type: 'sequence', terms: seq.map(String), blank: true },
       speak: `${seq.join(', ')}. What comes next?`, summary: `${seq.join(', ')}, ?`,
@@ -231,7 +232,7 @@ export function shapes(mode, d) {
 
 export function sizes(mode, d) {
   const topic = 'size';
-  if (mode === 'story') {
+  if (mode === 'story' && d === 'gentle') {
     const [bigE, smallE, bigN, smallN] = pick(BIG_SMALL);
     const askBig = chance(0.5);
     const { choices, answer } = makeChoices(
@@ -258,6 +259,7 @@ export function sizes(mode, d) {
   const { choices, answer } = makeChoices(all[idx], all.filter((_, i) => i !== idx));
   return {
     key: `${topic}:${ask}:${t.e}:${n}`, topic, input: 'choice', choices: choices.map(({ i, ...c }) => c), answer,
+    story: mode === 'story' ? { emoji: t.e, title: 'Size Parade' } : undefined,
     answerLabel: ask, prompt: `Tap the ${askText} ${t.one}`, speak: `Tap the ${ask === 'middle' ? 'middle sized' : ask} ${t.one}.`,
     summary: `Find the ${ask} ${t.one}`,
     explanation: ask === 'middle' ? 'It is bigger than the smallest and smaller than the biggest.' : `That one is the ${ask}!`,
@@ -313,9 +315,9 @@ export function compare(mode, d) {
   const t = pick(THINGS);
 
   if (mode === 'stem' && d !== 'gentle') {
-    const n = rand(2, 7);
+    const n = d === 'stretch' ? rand(5, 9) : rand(2, 6);
     const t2 = pick(THINGS.filter((x) => x.e !== t.e));
-    const wrong = distinctInts(2, Math.max(1, n - 2), n + 2, [n]);
+    const wrong = d === 'stretch' ? [n - 1, n + 1] : distinctInts(2, Math.max(1, n - 3), n + 3, [n]);
     const { choices, answer } = makeChoices(
       { visual: { type: 'objects', emoji: t2.e, count: n, compact: true, scatter: true } },
       wrong.map((w) => ({ visual: { type: 'objects', emoji: t2.e, count: w, compact: true, scatter: true } })),
@@ -427,8 +429,8 @@ export default {
       if (themed) return themed;
     }
     switch (topic) {
-      case 'count5': return counting('count5', mode, d, 1, 5);
-      case 'count10': return counting('count10', mode, d, 6, 10);
+      case 'count5': return counting('count5', mode, d, ...(d === 'gentle' ? [1, 3] : d === 'ready' ? [1, 5] : [3, 5]));
+      case 'count10': return counting('count10', mode, d, ...(d === 'gentle' ? [6, 7] : d === 'ready' ? [7, 9] : [9, 10]));
       case 'numerals': return numerals(mode, d);
       case 'shapes': return shapes(mode, d);
       case 'size': return sizes(mode, d);

@@ -53,7 +53,7 @@ function howManyMore(mode, d) {
   const topic = 'compare';
   if (mode !== 'story' && chance(0.6)) return retopic(A5.compare(mode, d === 'gentle' ? 'ready' : 'stretch'), topic);
   const [p, q] = sample(NAMES, 2);
-  const a = rand(d === 'stretch' ? 20 : 6, d === 'stretch' ? 60 : 18); const b = a - rand(2, d === 'stretch' ? 20 : 8);
+  const a = d === 'stretch' ? rand(20, 60) : d === 'gentle' ? rand(4, 10) : rand(8, 19); const b = a - (d === 'stretch' ? rand(2, 20) : d === 'gentle' ? rand(1, 3) : rand(2, 8));
   const thing = pick(['stickers', 'marbles', 'crayons', 'stamps', 'acorns']);
   const text = `${p} has ${a} ${thing}. ${q} has ${b} ${thing}. How many more ${thing} does ${p} have?`;
   return { key: `${topic}:more:${a}:${b}`, topic, input: 'keypad', story: mode === 'story' ? { emoji: '🧮', title: 'How Many More?' } : undefined,
@@ -113,15 +113,15 @@ export default {
     switch (topic) {
       case 'add': q = d === 'stretch' && chance(0.6) ? A7.addition(mode, 'easy') : A5.addition(mode, D5[d]); break;
       case 'sub': q = d === 'stretch' && chance(0.6) ? A7.subtraction(mode, 'easy') : A5.subtraction(mode, D5[d]); break;
-      case 'bonds': q = A5.bonds(mode, d === 'gentle' ? 'ready' : 'stretch'); break;
+      case 'bonds': q = d === 'gentle' ? A5.bonds(mode, 'ready') : d === 'ready' ? A5.bonds(mode, 'stretch', [10, 12, 15, 20]) : A5.bonds(mode, 'stretch', [20, 50, 100]); break;
       case 'placevalue': q = d === 'gentle' ? A5.teens(mode, 'stretch') : A7.placevalue(mode, d === 'stretch' && chance(0.5) ? 'standard' : 'easy'); break;
       case 'compare': q = howManyMore(mode, d); break;
-      case 'skip': q = d === 'gentle' ? A5.skip(mode, 'ready') : chance(0.5) ? A5.skip(mode, 'stretch') : A7.skip(mode, 'easy'); break;
+      case 'skip': q = d === 'gentle' ? A5.skip(mode, 'ready') : d === 'ready' ? A5.skip(mode, 'stretch') : A7.skip(mode, 'easy'); break;
       case 'time': q = d === 'stretch' ? A7.time(mode, 'easy') : A5.time(mode, d === 'gentle' ? 'ready' : 'stretch'); break;
-      case 'measure': q = d === 'stretch' && chance(0.5) ? A7.measure(mode, 'easy') : A5.measure(mode, 'stretch'); break;
-      case 'money': q = A7.money(mode, 'easy'); break;
+      case 'measure': q = d === 'gentle' ? A5.measure(mode, 'ready') : d === 'ready' ? A5.measure(mode, 'stretch') : A7.measure(mode, 'easy'); break;
+      case 'money': q = A7.money(mode, d === 'gentle' ? 'easy' : d === 'ready' ? 'standard' : 'challenge'); break;
       case 'graphs': q = graphs(mode, d); break;
-      case 'shapes': q = d === 'gentle' ? A5.shapes(mode, 'stretch') : chance(0.5) ? A7.fractions(mode === 'flash' ? 'worksheet' : mode, 'easy') : A7.geometry(mode === 'flash' ? 'worksheet' : mode, 'easy'); break;
+      case 'shapes': { const m2 = mode === 'flash' ? 'worksheet' : mode; q = d === 'gentle' ? A5.shapes(mode, 'stretch') : d === 'ready' ? (chance(0.5) ? A7.fractions(m2, 'easy') : A7.geometry(m2, 'easy')) : (chance(0.5) ? A7.fractions(m2, 'standard') : A7.geometry(m2, 'standard')); break; }
       default: return null;
     }
     return withSpeak(retopic(q, topic), toSpeech);

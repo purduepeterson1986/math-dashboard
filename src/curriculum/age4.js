@@ -12,9 +12,8 @@ import { themed4, middleEarthOn, THEME_RATE } from './middleEarth.js';
 import { chance } from '../lib/rng.js';
 
 const lvl = (d) => (d === 'gentle' || d === 'stretch' ? d : 'ready');
-// Age 3 level to use for each Age 4 level, and the same for Age 5
-const D3 = { gentle: 'ready', ready: 'stretch', stretch: 'stretch' };
-const D5 = { gentle: 'gentle', ready: 'gentle', stretch: 'ready' };
+// Every level calls a different generator or settings: Warm-up is still Pre-K, Stretch reaches into Kindergarten.
+const by = (d, g, r, st) => (d === 'gentle' ? g : d === 'stretch' ? st : r);
 
 const ALL = ['flash', 'worksheet', 'story', 'stem'];
 
@@ -40,9 +39,9 @@ export default {
     { id: 'sorting', label: 'Sorting & Classifying', group: 'Shapes & Measuring', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
-    { id: 'gentle', label: 'Warm-up', detail: 'Count to 10, one more, AB & AAB patterns, flat shapes' },
-    { id: 'ready', label: 'Advanced', detail: 'Count to 12+, numbers to 20, add & take away within 10, ABC patterns' },
-    { id: 'stretch', label: 'Stretch', detail: 'Kindergarten reach: count to 20, 3D shapes, sides & corners, measuring with cubes' },
+    { id: 'gentle', label: 'Warm-up', detail: 'Count to 10, numbers to 10, “one more”, AB patterns, flat shapes' },
+    { id: 'ready', label: 'Advanced', detail: 'Count to 16, numbers to 20, one more & one less, AAB & ABB patterns, counting by 10s' },
+    { id: 'stretch', label: 'Stretch', detail: 'Kindergarten reach: count to 20, teen numbers, add & take away, greatest/least, 3D shapes, ABC patterns, inches' },
   ],
   defaultDifficulty: 'ready',
   defaults: {
@@ -63,16 +62,19 @@ export default {
       if (themed) return themed;
     }
     switch (topic) {
-      case 'count10': return A3.counting('count10', mode, D3[d], d === 'gentle' ? 3 : 5, 10);
-      case 'count20': return retopic(A5.count20(mode, D5[d]), 'count20');
-      case 'numerals': return retopic(A3.numerals(mode, D3[d]), 'numerals');
-      case 'compare': return retopic(d === 'stretch' && chance(0.5) ? A5.compare(mode, 'gentle') : A3.compare(mode, D3[d]), 'compare');
-      case 'oneMore': return retopic(A3.oneMore(mode, D3[d]), 'oneMore');
-      case 'skip': return retopic(A5.skip(mode, 'gentle'), 'skip');
-      case 'shapes': return retopic(d === 'stretch' && chance(0.6) ? A5.shapes(mode, 'ready') : A3.shapes(mode, D3[d]), 'shapes');
-      case 'patterns': return retopic(A3.patterns(mode, D3[d]), 'patterns');
-      case 'measure': return retopic(A5.measure(mode, D5[d]), 'measure');
-      case 'sorting': return retopic(A5.sorting(mode, D5[d]), 'sorting');
+      case 'count10': return by(d,
+        () => A3.counting('count10', mode, 'gentle', 2, 5),
+        () => A3.counting('count10', mode, 'ready', 5, 10),
+        () => (chance(0.5) ? A3.counting('count10', mode, 'stretch', 8, 10) : retopic(A5.count20(mode, 'gentle', [11, 14]), 'count10')))();
+      case 'count20': return retopic(by(d, () => A5.count20(mode, 'gentle', [8, 12]), () => A5.count20(mode, 'gentle', [12, 16]), () => A5.count20(mode, 'ready', [16, 20]))(), 'count20');
+      case 'numerals': return retopic(by(d, () => A3.numerals(mode, 'ready'), () => A3.numerals(mode, 'stretch'), () => A5.teens(mode, 'gentle'))(), 'numerals');
+      case 'compare': return retopic(by(d, () => A3.compare(mode, 'gentle'), () => A3.compare(mode, 'ready'), () => A5.compare(mode, 'ready'))(), 'compare');
+      case 'oneMore': return retopic(by(d, () => A3.oneMore(mode, 'gentle'), () => A3.oneMore(mode, 'ready'), () => (chance(0.5) ? A5.addition(mode, 'gentle') : A5.subtraction(mode, 'gentle')))(), 'oneMore');
+      case 'skip': return retopic(by(d, () => A5.skip(mode, 'gentle', [1]), () => A5.skip(mode, 'gentle', [10]), () => A5.skip(mode, 'ready'))(), 'skip');
+      case 'shapes': return retopic(by(d, () => A3.shapes(mode, 'ready'), () => A3.shapes(mode, 'stretch'), () => A5.shapes(mode, 'gentle'))(), 'shapes');
+      case 'patterns': return retopic(A3.patterns(mode, d), 'patterns');
+      case 'measure': return retopic(A5.measure(mode, d), 'measure');
+      case 'sorting': return retopic(A5.sorting(mode, d), 'sorting');
       default: return null;
     }
   },

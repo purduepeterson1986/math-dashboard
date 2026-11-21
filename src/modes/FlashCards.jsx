@@ -105,6 +105,7 @@ export default function FlashCards({ curriculum, config, onFinish, onExit, setti
 
   return (
     <PlayShell
+      level={`Age ${curriculum.age} · ${(curriculum.difficulties.find((x) => x.id === (config.difficulty || curriculum.defaultDifficulty)) || {}).label || ''}`}
       title="Flash Cards"
       subtitle={`${records.current.length} answered · ${correct} correct`}
       icon={<span className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center"><Zap size={22} /></span>}

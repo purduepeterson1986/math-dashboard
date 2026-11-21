@@ -7,7 +7,7 @@ import Scratchpad, { PenButton } from './Scratchpad.jsx';
  * Full-screen play layout.
  * Landscape: problem on the left, input dock on the right. Portrait: problem above, dock below.
  */
-export default function PlayShell({ title, subtitle, icon, progress, stats, voice, scratch, onExit, confirmExit = true, problem, dock, footer, accent = 'brand' }) {
+export default function PlayShell({ title, subtitle, icon, progress, stats, voice, scratch, level, onExit, confirmExit = true, problem, dock, footer, accent = 'brand' }) {
   const [asking, setAsking] = useState(false);
   const [pen, setPen] = useState(false);
   const ink = useRef({});
@@ -25,6 +25,7 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, voic
               <div className="font-extrabold text-ink truncate leading-tight">{title}</div>
               {subtitle && <div className="text-xs font-bold text-ink-muted truncate">{subtitle}</div>}
             </div>
+            {level && <span className="shrink-0 ml-1 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-sm font-extrabold whitespace-nowrap">{level}</span>}
           </div>
           <div className="ml-auto flex items-center gap-2">
             {scratch && <PenButton on={pen} onClick={() => setPen((v) => !v)} />}

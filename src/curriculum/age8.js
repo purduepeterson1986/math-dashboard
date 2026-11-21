@@ -22,6 +22,77 @@ function choose(o, correct, wrong) {
   return { input: 'choice', choices, answer, answerLabel: correct.text, ...o };
 }
 
+
+/* ------------------- 4th-grade reach: bigger numbers, minutes, scale 5 ------------------- */
+function bigAdd(mode) {
+  const topic = 'add';
+  const a = mode === 'flash' ? rand(150, 899) : rand(1200, 6900); const b = mode === 'flash' ? rand(120, 899) : rand(1100, 2900);
+  if (mode === 'story') {
+    const [e, title, text] = pick([
+      ['♻️', 'Can Drive', (x, y) => `The school collected ${fmt(x)} cans in the fall and ${fmt(y)} cans in the spring. How many cans in all?`],
+      ['🚌', 'Bus Miles', (x, y) => `A bus drove ${fmt(x)} miles in March and ${fmt(y)} miles in April. How many miles in all?`],
+      ['📖', 'Pages Read', (x, y) => `${nm()} read ${fmt(x)} pages this year and ${nm()} read ${fmt(y)} pages. How many pages in all?`],
+    ]);
+    return kp({ key: `add:xl:story:${title}:${a}:${b}`, topic, story: { emoji: e, title }, prompt: text(a, b), answer: a + b, hints: ['Line up the digits. Add the ones first, then regroup.'], explanation: `${fmt(a)} + ${fmt(b)} = ${fmt(a + b)}.` });
+  }
+  return kp({ key: `add:xl:${a}:${b}`, topic, display: `${fmt(a)} + ${fmt(b)}`, prompt: mode === 'worksheet' ? 'Add. Regroup if you need to.' : undefined, answer: a + b,
+    hints: ['Start with the ones and regroup as you go.'], explanation: `${fmt(a)} + ${fmt(b)} = ${fmt(a + b)}.` });
+}
+function bigSub(mode) {
+  const topic = 'sub';
+  const a = mode === 'flash' ? rand(400, 999) : pick([2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]) + pick([0, 0, 3, 10, 40, 200]); const b = mode === 'flash' ? rand(125, a - 100) : rand(1127, a - 400);
+  if (mode === 'story') {
+    const [e, title, text] = pick([
+      ['🎟️', 'Tickets', (x, y) => `A stadium has ${fmt(x)} seats. ${fmt(y)} are sold. How many seats are still open?`],
+      ['🛣️', 'Road Trip', (x, y) => `A road trip is ${fmt(x)} miles long. The family has driven ${fmt(y)} miles. How many miles are left?`],
+      ['📦', 'Warehouse', (x, y) => `A warehouse had ${fmt(x)} boxes and shipped ${fmt(y)}. How many boxes are left?`],
+    ]);
+    return kp({ key: `sub:xl:story:${title}:${a}:${b}`, topic, story: { emoji: e, title }, prompt: text(a, b), answer: a - b, hints: ['Check by adding your answer to the number you took away.'], explanation: `${fmt(a)} − ${fmt(b)} = ${fmt(a - b)}.` });
+  }
+  return kp({ key: `sub:xl:${a}:${b}`, topic, display: `${fmt(a)} − ${fmt(b)}`, prompt: mode === 'worksheet' ? 'Subtract. Regroup across zeros if you need to.' : undefined, answer: a - b,
+    hints: ['Regroup from the next place that has something to give.'], explanation: `${fmt(a)} − ${fmt(b)} = ${fmt(a - b)}. Check: ${fmt(a - b)} + ${fmt(b)} = ${fmt(a)}.` });
+}
+function roundBig() {
+  const place = pick([1000, 10000, 100000]);
+  let n = rand(12000, 899999);
+  if (n % place === place / 2) n += 7;
+  const r = Math.round(n / place) * place;
+  const name = { 1000: 'thousand', 10000: 'ten thousand', 100000: 'hundred thousand' }[place];
+  return kp({ key: `round:xl:${n}:${place}`, topic: 'rounding', prompt: `Round ${fmt(n)} to the nearest ${name}.`, display: fmt(n), answer: r,
+    hints: [`Look at the digit just to the right of the ${name}s place.`, '5 or more: round up. Less than 5: stay the same.'], explanation: `${fmt(n)} rounds to ${fmt(r)}.` });
+}
+function elapsedBig(mode) {
+  const topic = 'time';
+  const h = rand(1, 11); const m = 5 * rand(0, 11);
+  const dur = mode === 'flash' ? 5 * rand(5, 18) : 5 * rand(17, 47);
+  const t = (h * 60 + m + dur);
+  const eh = ((Math.floor(t / 60) - 1) % 12) + 1; const em = t % 60;
+  const ts = (x, y) => `${x}:${String(y).padStart(2, '0')}`;
+  const who = nm();
+  const prompt = mode === 'story' ? `${who} starts a hike at ${ts(h, m)} and finishes at ${ts(eh, em)}. How many minutes was the hike?` : `How many minutes from ${ts(h, m)} to ${ts(eh, em)}?`;
+  return kp({ key: `time:xl:${h}:${m}:${dur}`, topic, story: mode === 'story' ? { emoji: '🥾', title: 'The Hike' } : undefined, prompt, answer: dur,
+    hints: ['Count the hours first (60 minutes each), then the extra minutes.'], explanation: `From ${ts(h, m)} to ${ts(eh, em)} is ${Math.floor(dur / 60)} hour${Math.floor(dur / 60) === 1 ? '' : 's'} and ${dur % 60} minutes, which is ${dur} minutes.` });
+}
+const DATA_SETS = [
+  { title: 'Pets in Our Town', items: [['Dogs', '🐶'], ['Cats', '🐱'], ['Fish', '🐠'], ['Birds', '🐦'], ['Rabbits', '🐰']] },
+  { title: 'Books Checked Out', items: [['Mon', '📚'], ['Tue', '📚'], ['Wed', '📚'], ['Thu', '📚'], ['Fri', '📚']] },
+  { title: 'Lemonade Cups Sold', items: [['Jun', '🍋'], ['Jul', '🍋'], ['Aug', '🍋'], ['Sep', '🍋'], ['Oct', '🍋']] },
+];
+function dataBig() {
+  const set = pick(DATA_SETS); const step = 5;
+  const vals = sample([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 5).map((v) => v * step);
+  const items = set.items.map(([label, emoji], i) => ({ label, emoji, value: vals[i] }));
+  const visual = { type: 'bargraph', items, step, title: set.title };
+  const [A, B, C] = sample(items, 3); const [hi, lo] = A.value > B.value ? [A, B] : [B, A];
+  const f = pick(['more', 'total', 'two', 'fewer']);
+  const key = `data:xl:${set.title}:${vals.join(',')}:${f}:${A.label}:${B.label}:${C.label}`;
+  const hint = 'Careful: each line on the graph counts by 5.';
+  if (f === 'more' || f === 'fewer') return kp({ key, topic: 'data', prompt: f === 'more' ? `How many MORE is ${hi.label} than ${lo.label}?` : `How many FEWER is ${lo.label} than ${hi.label}?`, visual, answer: hi.value - lo.value, hints: [hint], explanation: `${hi.value} − ${lo.value} = ${hi.value - lo.value}.` });
+  if (f === 'two') return kp({ key, topic: 'data', prompt: `How many are ${A.label} and ${C.label} together?`, visual, answer: A.value + C.value, hints: [hint], explanation: `${A.value} + ${C.value} = ${A.value + C.value}.` });
+  const total = vals.reduce((a, b) => a + b, 0);
+  return kp({ key, topic: 'data', prompt: 'How many in all?', visual, answer: total, hints: [hint, 'Add all five bars.'], explanation: `${vals.join(' + ')} = ${total}.` });
+}
+
 /* ------------------------------ Multiplication ------------------------------ */
 const FACTS = { easy: [2, 3, 4, 5, 10], standard: [2, 3, 4, 5, 6, 7, 8, 9, 10], challenge: [6, 7, 8, 9, 11, 12] };
 const GROUP_STORIES = [
@@ -210,7 +281,7 @@ export default {
   difficulties: [
     { id: 'easy', label: 'Warm-up', detail: '× and ÷ by 2, 3, 4, 5, 10; halves to fourths; count square units' },
     { id: 'standard', label: 'Advanced', detail: 'All facts to 10 × 10, fractions on a number line, area & perimeter, elapsed time' },
-    { id: 'challenge', label: 'Challenge', detail: '4th-grade reach: facts to 12, × by tens, 2-digit × 1-digit, equivalent fractions, L-shapes' },
+    { id: 'challenge', label: 'Challenge', detail: '4th-grade reach: facts to 12, × by tens, equivalent fractions, L-shapes, 4-digit adding & subtracting, rounding to 100,000' },
   ],
   defaultDifficulty: 'standard',
   defaults: {
@@ -234,15 +305,15 @@ export default {
       case 'mul': return mul(mode, d);
       case 'div': return div(mode, d);
       case 'patterns': return patterns(mode, d);
-      case 'add': return retopic(A7.addition(mode, D7[d]), topic);
-      case 'sub': return retopic(A7.subtraction(mode, D7[d]), topic);
-      case 'rounding': return retopic(A7.placevalue(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
+      case 'add': return d === 'challenge' ? bigAdd(mode) : retopic(A7.addition(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
+      case 'sub': return d === 'challenge' ? bigSub(mode) : retopic(A7.subtraction(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
+      case 'rounding': return d === 'challenge' ? roundBig() : retopic(A7.placevalue(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
       case 'fractions': return fractions(mode, d);
       case 'area': return area(mode, d);
       case 'geometry': return retopic(A7.geometry(mode, 'challenge'), topic);
-      case 'time': return retopic(A7.time(mode, D7[d]), topic);
+      case 'time': return d === 'challenge' ? elapsedBig(mode) : retopic(A7.time(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
       case 'mass': return massVolume(mode, d);
-      case 'data': return retopic(A7.data(mode, 'challenge'), topic);
+      case 'data': return d === 'challenge' ? dataBig() : retopic(A7.data(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
       default: return null;
     }
   },

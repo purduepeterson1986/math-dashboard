@@ -38,3 +38,10 @@ export function withSpeak(q, toSpeech) {
     .map((t) => toSpeech(String(t).replace(/☐/g, 'box')));
   return { ...q, speak: parts.join('. ').replace(/\.\./g, '.') };
 }
+
+/** Fraction answers: add a plain "write it as a fraction, like 2/5" line (the example is never the answer). */
+export function withFractionNote(q) {
+  if (!q || !String(q.answer).includes('/') || q.fractionNote) return q;
+  const ex = String(q.answer) === '2/5' ? '3/7' : '2/5';
+  return { ...q, fractionNote: true, summary: q.summary ?? q.prompt, prompt: `${q.prompt} Write it as a fraction, like ${ex}.`, hint: undefined };
+}

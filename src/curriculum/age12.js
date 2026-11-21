@@ -6,7 +6,7 @@
  * Display strings may contain [[n/d]] tokens, rendered as stacked fractions by <MathText>.
  */
 import { rand, pick, sample, shuffle, chance, gcd, lcm, round, distinctInts } from '../lib/rng.js';
-import { NAMES, makeChoices } from './shared.js';
+import { NAMES, makeChoices, withFractionNote } from './shared.js';
 import { themed12, middleEarthOn, THEME_RATE } from './middleEarth.js';
 
 const L = (d) => (d === 'easy' || d === 'challenge' ? d : 'standard');
@@ -534,7 +534,7 @@ function probability(mode, d) {
     const visual = { type: 'marbles', groups: cols.map((c, k) => ({ color: c, count: counts[k] })) };
     const story = mode === 'story' ? { emoji: '🎲', title: 'Mystery Bag' } : undefined;
     if (f === 'marble') {
-      return kp({ key: `p:m:${counts.join(',')}:${i}`, topic, story, visual, prompt: `You pick one marble without looking. What is P(${cols[i]})?`,
+      return kp({ key: `p:m:${counts.join(',')}:${i}`, topic, story, visual, prompt: `You pick one marble without looking. What is the probability it is ${cols[i]}? (Written P(${cols[i]}).)`,
         answer: frac(counts[i], total), hint: 'Answer as a fraction, e.g. 3/8',
         explanation: `${counts[i]} ${cols[i]} out of ${total} total = ${FR(counts[i], total)}` });
     }
@@ -560,7 +560,7 @@ function probability(mode, d) {
   }
   if (f === 'die') {
     const ev = pick([['an even number', 3], ['a number greater than 4', 2], ['a 6', 1], ['a prime number', 3], ['a multiple of 3', 2]]);
-    return kp({ key: `p:die:${ev[0]}`, topic, visual: { type: 'dice', count: 1 }, prompt: `Roll one die. What is P(${ev[0]})?`,
+    return kp({ key: `p:die:${ev[0]}`, topic, visual: { type: 'dice', count: 1 }, prompt: `Roll one die. What is the probability of rolling ${ev[0]}? (Written P(${ev[0]}).)`,
       answer: frac(ev[1], 6), hint: 'Answer as a fraction', explanation: `${ev[1]} of the 6 outcomes work: ${FR(ev[1], 6)}` });
   }
   if (f === 'twoDice') {
@@ -825,6 +825,12 @@ function arithmeticStory(topic, d) {
         const x = rand(120, 480); const y = rand(120, 480);
         return { e: '📚', title: 'Read-a-thon', text: `${who} read ${x} pages in October and ${y} pages in November.`, q: 'How many pages in all?', a: x + y, hints: [`Add ${x} + ${y}.`], ex: `${x} + ${y} = ${x + y}` };
       }
+      if (d === 'challenge') {
+        const parts = [rand(12000, 48000), rand(8000, 35000), rand(15000, 52000), rand(9000, 29000), rand(11000, 41000)].map((v) => v / 100);
+        const tot = round(parts.reduce((a, b) => a + b, 0), 2);
+        return { e: '🏫', title: 'Class Trip Fund', text: `A class raised ${parts.map(money).join(', ')} at five fundraisers.`, q: 'How many dollars did they raise in all?', a: tot,
+          hints: ['Line up the decimal points.', 'Add two amounts at a time.'], ex: `The five amounts add up to ${fmt(tot)}.` };
+      }
       const days = [rand(1200, 4800), rand(800, 3500), rand(1500, 5200)].map((v) => v / 100);
       const s = round(days.reduce((a, b) => a + b, 0), 2);
       const goal = Math.ceil(s / 50) * 50 + 50;
@@ -844,14 +850,24 @@ function arithmeticStory(topic, d) {
     mul: () => {
       const n = rand(3, 9); const pr = rand(150, 899) / 100; const extra = rand(1500, 4500) / 100;
       if (d === 'easy') { const rows = rand(12, 30); const per = rand(8, 24); return { e: '🌱', title: 'Garden Rows', text: `A garden has ${rows} rows with ${per} plants in each row.`, q: 'How many plants?', a: rows * per, hints: [`Multiply ${rows} × ${per}.`], ex: `${rows} × ${per} = ${rows * per}` }; }
+      if (d === 'challenge') {
+        const q1 = rand(12, 36); const p1 = rand(35, 189) / 100; const q2 = rand(6, 18); const p2 = rand(145, 649) / 100;
+        return { e: '🎒', title: 'Classroom Supplies', text: `A teacher buys ${q1} pencil packs at ${money(p1)} each and ${q2} markers at ${money(p2)} each.`, q: 'What is the total cost, in dollars?', a: round(q1 * p1 + q2 * p2, 2),
+          hints: [`Packs: ${q1} × ${money(p1)} = ${money(q1 * p1)}.`, `Markers: ${q2} × ${money(p2)}.`, 'Add the two totals.'], ex: `${fmt(round(q1 * p1, 2))} + ${fmt(round(q2 * p2, 2))} = ${fmt(round(q1 * p1 + q2 * p2, 2))}` };
+      }
       return { e: '🎒', title: 'Back to School', text: `${who} buys ${n} notebooks at ${money(pr)} each and a backpack for ${money(extra)}.`,
         q: 'What is the total cost, in dollars?', a: round(n * pr + extra, 2), hints: [`Notebooks: ${n} × ${money(pr)} = ${money(n * pr)}.`, `Add the backpack.`], ex: `${fmt(round(n * pr, 2))} + ${fmt(extra)} = ${fmt(round(n * pr + extra, 2))}` };
     },
     div: () => {
-      if (d === 'challenge' || chance(0.5)) {
+      if (d === 'challenge') {
+        const n = rand(3, 9); const each = rand(215, 899) / 100;
+        return { e: '🍕', title: 'Sharing the Bill', text: `${n} friends split a $${fmt(round(n * each, 2))} bill equally.`, q: 'How many dollars does each friend pay?', a: each,
+          hints: [`Divide ${fmt(round(n * each, 2))} by ${n}.`, 'Keep the decimal point in line.'], ex: `${fmt(round(n * each, 2))} ÷ ${n} = ${fmt(each)}` };
+      }
+      if (d === 'standard') {
         const cap = pick([24, 28, 32, 36, 44, 48]); const kids = cap * rand(3, 8) + rand(1, cap - 1);
         return { e: '🚌', title: 'Field Trip', text: `${kids} students are going on a field trip. Each bus holds ${cap} students.`, q: 'How many buses are needed?', a: Math.ceil(kids / cap),
-          hints: [`${kids} ÷ ${cap} = ${Math.floor(kids / cap)} remainder ${kids % cap}.`, 'Can the leftover students stay home?'], ex: `${Math.floor(kids / cap)} full buses + 1 more for the remaining ${kids % cap} = ${Math.ceil(kids / cap)}` };
+          hints: [`${kids} ÷ ${cap} = ${Math.floor(kids / cap)} remainder ${kids % cap}.`, 'Can the leftover students stay home?'], ex: `${Math.floor(kids / cap)} full buses + 1 more for the remaining ${kids % cap}.` };
       }
       const per = pick([6, 8, 12, 15, 16, 24]); const boxes = rand(12, 60);
       return { e: '🍪', title: 'Bake Sale', text: `The club baked ${per * boxes} cookies and packs them ${per} to a box.`, q: 'How many boxes do they fill?', a: boxes, hints: [`Divide ${per * boxes} by ${per}.`], ex: `${per * boxes} ÷ ${per} = ${boxes}` };
@@ -862,14 +878,14 @@ function arithmeticStory(topic, d) {
 }
 
 function integerStory(d) {
-  const t0 = rand(-15, 5); const up = rand(6, 25); const down = rand(3, 18);
+  const t0 = d === 'easy' ? rand(-6, 4) : rand(-15, 5); const up = d === 'easy' ? rand(3, 10) : rand(6, 25); const down = d === 'easy' ? rand(2, 8) : rand(3, 18);
   if (chance(0.5)) {
     const r = t0 + up - down;
     return kp({ key: `story:int:temp:${t0}:${up}:${down}`, topic: 'integers', story: { emoji: '🌡️', title: 'Wild Weather' },
       prompt: `At dawn it was ${fmt(t0)}°F. By noon the temperature rose ${up}°, then fell ${down}° by evening. What was the evening temperature?`,
       answer: ans(r), hints: [`${fmt(t0)} + ${up} = ${fmt(t0 + up)}.`, `${fmt(t0 + up)} − ${down}.`], explanation: `${fmt(t0)} + ${up} − ${down} = ${fmt(r)}°F` });
   }
-  const depth = -rand(20, 120); const rise = rand(5, 40); const dive = rand(10, 60);
+  const depth = d === 'easy' ? -rand(5, 30) : -rand(20, 120); const rise = d === 'easy' ? rand(3, 15) : rand(5, 40); const dive = d === 'easy' ? rand(4, 20) : rand(10, 60);
   const r = depth + rise - dive;
   return kp({ key: `story:int:sub:${depth}:${rise}:${dive}`, topic: 'integers', story: { emoji: '🤿', title: 'Deep Dive' },
     prompt: `A submarine is at ${fmt(depth)} m. It rises ${rise} m, then dives ${dive} m${d === 'challenge' ? ', and then repeats the dive' : ''}. What is its final elevation?`,
@@ -1085,7 +1101,7 @@ export default {
       case 'ratio': return ratio(mode, d);
       case 'geometry': return geometry(mode, d);
       case 'coords': return coords(mode, d);
-      case 'probability': return probability(mode, d);
+      case 'probability': return withFractionNote(probability(mode, d));
       case 'rates': return rates(mode, d);
       case 'stats': return stats(mode, d);
       case 'sequences': return sequences(mode, d);
