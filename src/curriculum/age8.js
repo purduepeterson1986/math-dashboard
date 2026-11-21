@@ -26,7 +26,7 @@ function choose(o, correct, wrong) {
 /* ------------------- 4th-grade reach: bigger numbers, minutes, scale 5 ------------------- */
 function bigAdd(mode) {
   const topic = 'add';
-  const a = mode === 'flash' ? rand(150, 899) : rand(1200, 6900); const b = mode === 'flash' ? rand(120, 899) : rand(1100, 2900);
+  const a = mode === 'flash' ? rand(450, 999) : rand(1200, 6900); const b = mode === 'flash' ? rand(Math.max(150, 1001 - a), 999) : rand(1100, 2900);
   if (mode === 'story') {
     const [e, title, text] = pick([
       ['♻️', 'Can Drive', (x, y) => `The school collected ${fmt(x)} cans in the fall and ${fmt(y)} cans in the spring. How many cans in all?`],
@@ -40,7 +40,7 @@ function bigAdd(mode) {
 }
 function bigSub(mode) {
   const topic = 'sub';
-  const a = mode === 'flash' ? rand(400, 999) : pick([2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]) + pick([0, 0, 3, 10, 40, 200]); const b = mode === 'flash' ? rand(125, a - 100) : rand(1127, a - 400);
+  const a = mode === 'flash' ? rand(1001, 1999) : pick([2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]) + pick([0, 0, 3, 10, 40, 200]); const b = mode === 'flash' ? rand(125, a - 100) : rand(1127, a - 400);
   if (mode === 'story') {
     const [e, title, text] = pick([
       ['🎟️', 'Tickets', (x, y) => `A stadium has ${fmt(x)} seats. ${fmt(y)} are sold. How many seats are still open?`],
@@ -54,7 +54,7 @@ function bigSub(mode) {
 }
 function roundBig() {
   const place = pick([1000, 10000, 100000]);
-  let n = rand(12000, 899999);
+  let n = place === 100000 ? rand(110000, 899999) : rand(12000, 899999);
   if (n % place === place / 2) n += 7;
   const r = Math.round(n / place) * place;
   const name = { 1000: 'thousand', 10000: 'ten thousand', 100000: 'hundred thousand' }[place];
@@ -64,7 +64,8 @@ function roundBig() {
 function elapsedBig(mode) {
   const topic = 'time';
   const h = rand(1, 11); const m = 5 * rand(0, 11);
-  const dur = mode === 'flash' ? 5 * rand(5, 18) : 5 * rand(17, 47);
+  let dur = mode === 'flash' ? 5 * rand(7, 22) : 5 * rand(17, 47);
+  if (dur % 60 === 0) dur += 5;
   const t = (h * 60 + m + dur);
   const eh = ((Math.floor(t / 60) - 1) % 12) + 1; const em = t % 60;
   const ts = (x, y) => `${x}:${String(y).padStart(2, '0')}`;
@@ -94,7 +95,7 @@ function dataBig() {
 }
 
 /* ------------------------------ Multiplication ------------------------------ */
-const FACTS = { easy: [2, 3, 4, 5, 10], standard: [2, 3, 4, 5, 6, 7, 8, 9, 10], challenge: [6, 7, 8, 9, 11, 12] };
+const FACTS = { easy: [2, 3, 4, 5, 10], standard: [3, 4, 5, 6, 7, 8, 9], challenge: [6, 7, 8, 9, 11, 12] };
 const GROUP_STORIES = [
   ['🍪', 'Bake Sale', (r, c) => `There are ${r} trays with ${c} cookies on each tray. How many cookies?`],
   ['🚗', 'Parking Lot', (r, c) => `A parking lot has ${r} rows with ${c} cars in each row. How many cars?`],
@@ -103,7 +104,7 @@ const GROUP_STORIES = [
 ];
 function mul(mode, d) {
   const topic = 'mul';
-  const a = pick(FACTS[d]); const b = rand(2, by(d, 10, 10, 12));
+  const a = pick(FACTS[d]); const b = d === 'challenge' ? pick([6, 7, 8, 9, 11, 12]) : rand(2, 10);
   if (mode === 'story') {
     const [e, title, text] = pick(GROUP_STORIES);
     return kp({ key: `mul:story:${title}:${a}:${b}`, topic, story: { emoji: e, title }, prompt: text(b, a), answer: a * b,
@@ -133,13 +134,18 @@ function mul(mode, d) {
     const k = rand(3, 9); const n = rand(12, 99);
     return kp({ key: `mul:2d:${k}:${n}`, topic, display: `${n} × ${k}`, answer: k * n, explanation: `${n} × ${k} = ${k * n}.` });
   }
+  if (d === 'challenge' && chance(0.3)) {
+    const t = rand(2, 9) * 10; const k = rand(3, 9);
+    return kp({ key: `mul:tens2:${k}:${t}`, topic, display: chance(0.5) ? `${k} × ${t}` : `${t} × ${k}`, answer: k * t,
+      hints: [`${k} × ${t / 10} = ${(k * t) / 10}.`, 'Then make it ten times bigger.'], explanation: `${k} × ${t / 10} = ${(k * t) / 10}, so ${k} × ${t} = ${k * t}.` });
+  }
   return kp({ key: `mul:${a}:${b}`, topic, display: chance(0.5) ? `${a} × ${b}` : `${b} × ${a}`, answer: a * b, explanation: `${a} × ${b} = ${a * b}.` });
 }
 
 /* -------------------------------- Division -------------------------------- */
 function div(mode, d) {
   const topic = 'div';
-  const a = pick(FACTS[d]); const q = rand(2, by(d, 10, 10, 12));
+  const a = pick(FACTS[d]); const q = rand(by(d, 2, 3, 4), by(d, 10, 10, 12));
   if (mode === 'story') {
     const T = pick([
       ['🍕', 'Pizza Party', `${a * q} slices of pizza are shared equally by ${a} friends. How many slices does each friend get?`],
@@ -164,7 +170,7 @@ function div(mode, d) {
 /* ---------------------------- Fractions ---------------------------- */
 function fractions(mode, d) {
   const topic = 'fractions';
-  const f = pick(by(d, ['name', 'line', 'compare'], ['line', 'equiv', 'compare', 'name'], ['equiv', 'line', 'compareSame', 'ofset']));
+  const f = pick(by(d, ['name', 'line', 'compare'], ['line', 'equiv', 'compareSame', 'name'], ['equiv', 'line', 'compareUnlike', 'ofset']));
   if (f === 'name' || f === 'ofset') return retopic(A7.fractions(mode, f === 'ofset' ? 'challenge' : 'standard'), topic);
   if (f === 'line') {
     const den = pick(by(d, [2, 3, 4], [3, 4, 6, 8], [4, 6, 8])); const max = d === 'challenge' ? 2 : 1;
@@ -185,6 +191,11 @@ function fractions(mode, d) {
       visual: { type: 'fracshape', parts: dd * k, shaded: n * k, kind: 'rect' }, answer: n * k,
       hints: [`${dd} × ${k} = ${dd * k}, so multiply the top by ${k} too.`], explanation: `[[${n}/${dd}]] = [[${n * k}/${dd * k}]] because both parts were multiplied by ${k}.` });
   }
+  if (f === 'compareUnlike') {
+    const n = rand(1, 3); const [d1, d2] = sample([n + 2, n + 3, 5, 6, 8].filter((x, i, arr) => x > n && arr.indexOf(x) === i), 2).sort((x, y) => x - y); // d1 < d2
+    return choose({ key: `frac:cmpu:${n}:${d1}:${d2}`, topic, prompt: 'Which fraction is GREATER?', hints: ['Same number of pieces, but the bigger the bottom number, the smaller each piece.'],
+      explanation: `Both have ${n} piece${n > 1 ? 's' : ''}, but ${d1}ths are bigger than ${d2}ths, so [[${n}/${d1}]] is greater.` }, { text: `[[${n}/${d1}]]` }, [{ text: `[[${n}/${d2}]]` }]);
+  }
   if (f === 'compareSame') {
     const den = pick([4, 5, 6, 8, 10]); const [a, b] = sample(Array.from({ length: den - 1 }, (_, i) => i + 1), 2);
     const big = Math.max(a, b);
@@ -192,6 +203,24 @@ function fractions(mode, d) {
       explanation: `Both are ${den}ths, and ${big} pieces is more than ${Math.min(a, b)}.` }, { text: `[[${big}/${den}]]` }, [{ text: `[[${Math.min(a, b)}/${den}]]` }]);
   }
   return retopic(A7.fractions(mode, 'standard'), topic);
+}
+
+/* ------------------------ Quadrilateral attributes ------------------------ */
+function quadAttr() {
+  const topic = 'geometry';
+  const T = pick([
+    () => ['I have 4 sides that are all the same length, and 4 right angles. Which shape am I?', 'square', ['rhombus', 'rectangle', 'trapezoid'], 'A square has 4 equal sides and 4 right angles.'],
+    () => ['I have 4 sides that are all the same length, but my corners are not right angles. Which shape am I?', 'rhombus', ['square', 'rectangle', 'trapezoid'], 'A rhombus has 4 equal sides, but its corners are not right angles.'],
+    () => ['I have exactly one pair of parallel sides. Which shape am I?', 'trapezoid', ['rectangle', 'square', 'rhombus'], 'A trapezoid has just one pair of parallel sides. The others have two pairs.'],
+    () => ['I have 4 right angles, but my sides are not all the same length. Which shape am I?', 'rectangle', ['square', 'rhombus', 'trapezoid'], 'A rectangle has 4 right angles. Its sides are not all equal (a square would have equal sides).'],
+  ])();
+  if (chance(0.35)) {
+    const yes = chance(0.5);
+    return choose({ key: `geo:truefalse:${yes}`, topic, prompt: yes ? 'Is every square also a rectangle?' : 'Is every rectangle also a square?', hints: ['A rectangle has 4 right angles. What else does a square have?'],
+      explanation: yes ? 'A square has 4 right angles, so it is a rectangle too.' : 'A rectangle can have long and short sides. Only some rectangles are squares.' }, { text: yes ? 'Yes' : 'No' }, [{ text: yes ? 'No' : 'Yes' }]);
+  }
+  const [prompt, right, wrong, why] = T;
+  return choose({ key: `geo:attr:${right}`, topic, prompt, answerLabel: right, hints: ['Think about the sides and the angles.'], explanation: why }, { text: right }, wrong.map((text) => ({ text })));
 }
 
 /* ---------------------------- Area & perimeter ---------------------------- */
@@ -228,7 +257,7 @@ function massVolume(mode, d) {
     () => { const k = rand(2, by(d, 5, 9, 12)); const per = rand(2, by(d, 5, 9, 25)); return ['🍎', 'Apple Crates', `Each crate of apples weighs ${per} kilograms. How many kilograms do ${k} crates weigh?`, k * per, [`${k} × ${per}`]]; },
     () => { const a = rand(by(d, 120, 250, 450), by(d, 400, 800, 950)); const b = rand(by(d, 50, 100, 150), a - 20); return ['⚖️', 'Weighing', `A bag of flour weighs ${a} grams. A bag of sugar weighs ${b} grams. How much heavier is the flour, in grams?`, a - b, [`${a} − ${b}`]]; },
     () => { const per = rand(2, 6); const k = rand(3, by(d, 6, 9, 12)); return ['🪣', 'Filling the Tank', `A bucket holds ${per} liters. How many liters do ${k} buckets hold?`, per * k, [`${k} × ${per}`]]; },
-    () => { const k = rand(2, 9); const per = rand(3, 9); return ['🥤', 'Juice Jugs', `${k * per} liters of juice are poured equally into ${k} jugs. How many liters in each jug?`, per, [`${k * per} ÷ ${k}`]]; },
+    () => { const k = d === 'easy' ? pick([2, 3, 4, 5]) : rand(2, 9); const per = rand(3, 9); return ['🥤', 'Juice Jugs', `${k * per} liters of juice are poured equally into ${k} jugs. How many liters in each jug?`, per, [`${k * per} ÷ ${k}`]]; },
   ])();
   const [e, title, text, ans, hints] = T;
   return kp({ key: `mass:${title}:${ans}:${text.length}`, topic, story: mode === 'story' ? { emoji: e, title } : undefined, prompt: text, answer: ans, hints, explanation: `${hints[0]} = ${ans}.` });
@@ -242,7 +271,7 @@ function patterns(mode, d) {
   if (f === 'evenodd') return retopic(A7.evenodd(mode === 'stem' ? 'worksheet' : mode, 'challenge'), topic);
   if (f === 'puzzle') return retopic(A7.puzzles('stem', 'challenge'), topic);
   if (f === 'table') {
-    const k = rand(2, 9); const start = rand(1, 4); const ins = [start, start + 1, start + 2, start + rand(4, 6)];
+    const k = rand(by(d, 2, 3, 6), 9); const start = rand(1, 4); const ins = [start, start + 1, start + 2, start + rand(4, 6)];
     return kp({ key: `pat:table:${k}:${ins.join(',')}`, topic, prompt: `The rule is "multiply by ${k}". What number comes out for ${ins[3]}?`,
       visual: { type: 'sequence', terms: ins.slice(0, 3).map((x) => `${x}→${x * k}`), blank: true }, answer: ins[3] * k,
       explanation: `${ins[3]} × ${k} = ${ins[3] * k}.` });
@@ -310,10 +339,10 @@ export default {
       case 'rounding': return d === 'challenge' ? roundBig() : retopic(A7.placevalue(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
       case 'fractions': return fractions(mode, d);
       case 'area': return area(mode, d);
-      case 'geometry': return retopic(A7.geometry(mode, 'challenge'), topic);
+      case 'geometry': return d === 'challenge' ? (chance(0.6) ? quadAttr() : retopic(A7.geometry(mode, 'challenge', ['quad', 'vertices']), topic)) : retopic(A7.geometry(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
       case 'time': return d === 'challenge' ? elapsedBig(mode) : retopic(A7.time(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
       case 'mass': return massVolume(mode, d);
-      case 'data': return d === 'challenge' ? dataBig() : retopic(A7.data(mode, d === 'easy' ? 'standard' : 'challenge'), topic);
+      case 'data': return d === 'challenge' ? dataBig() : retopic(A7.data(mode, d === 'easy' ? 'standard' : 'challenge', d === 'easy' ? ['read'] : []), topic);
       default: return null;
     }
   },

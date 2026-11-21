@@ -25,18 +25,19 @@ function choose(o, correct, wrong) {
 const regroups = (a, b) => String(a).split('').reverse().some((d, i) => Number(d) + Number(String(b).split('').reverse()[i] || 0) >= 10);
 
 /* ------------------------------ Addition ------------------------------ */
-export function addition(mode, d) {
+export function addition(mode, d, _t = 0) {
   const topic = 'add';
   if (mode === 'story') return addStory(d);
   let a; let b; let c = 0;
   if (mode === 'flash') {
     if (d === 'easy') { a = rand(11, 89); b = rand(2, 9); }
     else if (d === 'standard') { a = rand(12, 79); b = rand(11, 99 - a); if (b < 11) b = 11; }
-    else { a = rand(25, 99); b = rand(25, 99); }
+    else { a = rand(125, 599); b = rand(45, 299); }
   } else if (d === 'easy') { a = rand(12, 69); b = rand(11, 29); }
   else if (d === 'standard') { a = rand(105, 689); b = rand(27, 299); }
   else if (chance(0.4)) { a = rand(102, 499); b = rand(46, 299); c = rand(11, 99); }
   else { a = rand(256, 699); b = rand(158, 299); }
+  if (d !== 'easy' && !regroups(a, b) && _t < 25) return addition(mode, d, _t + 1); // "with regrouping"
   const s = a + b + c;
   const disp = c ? `${a} + ${b} + ${c}` : `${a} + ${b}`;
   return kp({ key: `add:${a}:${b}:${c}`, topic, display: disp, prompt: mode === 'worksheet' ? (regroups(a, b) ? 'Add. Regroup if you need to.' : 'Add.') : undefined, answer: s,
@@ -58,7 +59,7 @@ function addStory(d) {
 }
 
 /* ----------------------------- Subtraction ----------------------------- */
-export function subtraction(mode, d) {
+export function subtraction(mode, d, _t = 0) {
   const topic = 'sub';
   if (mode === 'story') return subStory(d);
   let a; let b;
@@ -69,6 +70,7 @@ export function subtraction(mode, d) {
   } else if (d === 'easy') { a = rand(40, 99); b = rand(12, a - 6); }
   else if (d === 'standard') { a = rand(300, 900); b = rand(108, a - 40); }
   else { a = pick([300, 400, 500, 600, 700, 800, 900, 1000]) + pick([0, 0, 2, 4, 5]); b = rand(127, a - 60); } // across zeros
+  if (d !== 'easy' && a % 10 >= b % 10 && _t < 25) return subtraction(mode, d, _t + 1); // "with regrouping"
   return kp({ key: `sub:${a}:${b}`, topic, display: `${a} − ${b}`, prompt: mode === 'worksheet' ? 'Subtract.' : undefined, answer: a - b,
     explanation: `${a} − ${b} = ${fmt(a - b)}. Check: ${fmt(a - b)} + ${b} = ${a}.` });
 }
@@ -89,7 +91,7 @@ const PLACE = ['ones', 'tens', 'hundreds', 'thousands'];
 export function placevalue(mode, d) {
   const topic = 'placevalue';
   const forms = mode === 'flash' ? by(d, ['value', 'tensMore'], ['value', 'expanded', 'tensMore'], ['round', 'value', 'tensMore'])
-    : by(d, ['blocks', 'value', 'expanded'], ['blocks', 'value', 'expanded', 'compare', 'tensMore'], ['round', 'compare', 'expanded', 'value', 'blocks']);
+    : by(d, ['blocks', 'value', 'expanded'], ['blocks', 'value', 'expanded', 'compare', 'tensMore'], ['round', 'round', 'compare', 'expanded', 'value']);
   const f = pick(forms);
   const n = d === 'easy' ? rand(21, 99) : d === 'standard' ? rand(102, 999) : rand(1002, 9999);
   if (f === 'blocks') {
@@ -138,6 +140,16 @@ export function placevalue(mode, d) {
 /* ------------------------------ Odd & even ------------------------------ */
 export function evenodd(mode, d) {
   const topic = 'evenodd';
+  if (d === 'challenge' && chance(0.85)) {
+    if (chance(0.5)) {
+      const a = rand(3, 9); const b = rand(3, 9); const even = (a * b) % 2 === 0;
+      return choose({ key: `eo:prod:${a}:${b}`, topic, prompt: `Is ${a} × ${b} odd or even?`, hints: ['odd × odd = odd. If either number is even, the answer is even.'],
+        explanation: `${a} × ${b} = ${a * b}, which is ${even ? 'even' : 'odd'}.` }, { text: even ? 'Even' : 'Odd' }, [{ text: even ? 'Odd' : 'Even' }]);
+    }
+    const a = rand(21, 99); const b = rand(21, 99); const even = (a + b) % 2 === 0;
+    return choose({ key: `eo:sum2:${a}:${b}`, topic, prompt: `Is ${a} + ${b} odd or even?`, hints: ['odd + odd = even, even + even = even, odd + even = odd.'],
+      explanation: `${a} + ${b} = ${a + b}, which is ${even ? 'even' : 'odd'}.` }, { text: even ? 'Even' : 'Odd' }, [{ text: even ? 'Odd' : 'Even' }]);
+  }
   if (d !== 'easy' && chance(0.4)) {
     const a = rand(3, by(d, 20, 40, 99)); const b = rand(3, by(d, 20, 40, 99)); const even = (a + b) % 2 === 0;
     return choose({ key: `eo:sum:${a}:${b}`, topic, prompt: `Is ${a} + ${b} odd or even?`, hints: ['odd + odd = even, even + even = even, odd + even = odd.'],
@@ -155,7 +167,7 @@ export function evenodd(mode, d) {
 /* ----------------------------- Skip counting ----------------------------- */
 export function skip(mode, d) {
   const topic = 'skip';
-  const step = pick(by(d, [2, 5, 10], [5, 10, 100, 3, 4], [3, 4, 6, 25, 50, 100]));
+  const step = pick(by(d, [2, 5, 10], [3, 4, 100, 20], [6, 7, 8, 9, 25, 50]));
   const back = d !== 'easy' && chance(0.3);
   const start = step === 100 ? rand(1, 4) * 100 + pick([0, 0, 20, 50]) : step * rand(1, 8) + (step >= 10 && d !== 'easy' ? rand(1, 9) : 0);
   let terms = [0, 1, 2, 3].map((i) => start + i * step);
@@ -171,7 +183,7 @@ export function skip(mode, d) {
 const GROUPS = [['🍪', 'cookies', 'plates'], ['🌷', 'tulips', 'rows'], ['🥚', 'eggs', 'nests'], ['⚽', 'balls', 'bins'], ['🍓', 'strawberries', 'bowls']];
 export function arrays(mode, d) {
   const topic = 'arrays';
-  const f = pick(by(d, ['array', 'repeated'], ['array', 'repeated', 'facts'], ['facts', 'divide', 'array', 'divide']));
+  const f = pick(by(d, ['array', 'repeated'], ['array', 'facts', 'facts'], ['facts', 'divide', 'array', 'divide']));
   const facts = by(d, [2, 5, 10], [2, 3, 4, 5, 10], [3, 4, 6, 7, 8, 9]);
   if (f === 'array' || (mode === 'stem' && f !== 'divide')) {
     const r = rand(2, by(d, 5, 6, 9)); const c = rand(2, by(d, 5, 8, 9)); const [e] = pick(GROUPS);
@@ -202,10 +214,10 @@ export function arrays(mode, d) {
 }
 
 /* -------------------------------- Money -------------------------------- */
-export function money(mode, d) {
+export function money(mode, d, opt) {
   const topic = 'money';
-  const kinds = by(d, [10, 5, 1], [25, 10, 5, 1], [100, 25, 10, 5, 1]);
-  if (mode === 'story' || (d !== 'easy' && mode === 'stem')) {
+  const kinds = opt?.kinds || by(d, [10, 5, 1], [25, 10, 5, 1], [100, 25, 10, 5, 1]);
+  if (!opt?.noChange && (mode === 'story' || (d !== 'easy' && mode === 'stem'))) {
     const price = rand(by(d, 12, 25, 115), by(d, 45, 95, 450));
     const paid = d === 'easy' ? 50 : price < 100 ? 100 : Math.ceil(price / 100) * 100;
     const items = ['a pencil', 'a sticker book', 'a yo-yo', 'a bouncy ball', 'a juice box', 'a toy car'];
@@ -213,7 +225,7 @@ export function money(mode, d) {
       prompt: `${nm()} buys ${pick(items)} for ${cents(price)} and pays with ${cents(paid)}. How much change, in cents?`, answer: paid - price,
       hints: [`Count up from ${cents(price)} to ${cents(paid)}.`, '100 cents = 1 dollar.'], explanation: `${paid} − ${price} = ${paid - price}¢ change.` });
   }
-  const n = rand(by(d, 3, 4, 5), by(d, 6, 8, 9));
+  const n = opt?.n ? rand(opt.n[0], opt.n[1]) : rand(by(d, 3, 4, 5), by(d, 6, 8, 9));
   const coins = Array.from({ length: n }, () => pick(kinds)).sort((a, b) => b - a);
   const total = coins.reduce((a, b) => a + b, 0);
   return kp({ key: `money:count:${coins.join(',')}`, topic, prompt: 'How many cents in all?', visual: { type: 'coins', coins }, answer: total, hint: 'Answer in cents (1 dollar = 100¢)',
@@ -228,8 +240,8 @@ export function time(mode, d) {
   const h = rand(1, 12);
   const m = d === 'easy' ? pick([0, 15, 30, 45]) : d === 'standard' ? 5 * rand(0, 11) : rand(0, 59);
   if (mode === 'story' || (mode === 'stem' && d !== 'easy') || (mode === 'flash' && d === 'challenge') || (mode === 'worksheet' && d === 'challenge' && chance(0.5))) {
-    const dur = pick(by(d, [30, 60], [15, 30, 45, 60, 90], [25, 35, 50, 75, 105]));
-    const sm = 5 * rand(0, 11);
+    const dur = pick(by(d, [30, 60], [15, 30, 45, 60], [25, 35, 50, 75, 90]));
+    const sm = d === 'challenge' ? 5 * rand(0, 11) : pick([0, 15, 30, 45]);
     const [eh, em] = addMin(h, sm, dur);
     const acts = [['⚽', 'Soccer Practice', 'Soccer practice'], ['🎹', 'Piano Lesson', 'Piano lesson'], ['🎬', 'Movie Time', 'The movie'], ['🏊', 'Swim Class', 'Swim class']];
     const [e, title, what] = pick(acts);
@@ -304,11 +316,11 @@ export function fractions(mode, d) {
 }
 
 /* --------------------------- Shapes & attributes --------------------------- */
-const POLY = { triangle: 3, square: 4, rectangle: 4, hexagon: 6, diamond: 4 };
+const POLY = { triangle: 3, square: 4, rectangle: 4, pentagon: 5, hexagon: 6, diamond: 4 };
 const SOLID = [['cube', '🎲', 6, 8], ['rectangular prism', '📦', 6, 8]];
-export function geometry(mode, d) {
+export function geometry(mode, d, skipForms = []) {
   const topic = 'geometry';
-  const f = pick(by(d, ['sides', 'name'], ['sides', 'vertices', 'name', 'quad'], ['faces', 'vertices', 'quad', 'total']));
+  const f = pick(by(d, ['sides', 'name'], ['vertices', 'quad', 'faces'], ['faces', 'vertices', 'quad', 'total']).filter((x) => !skipForms.includes(x)));
   if (f === 'faces') {
     const [n, e, faces, verts] = pick(SOLID); const askF = chance(0.5);
     return kp({ key: `geo:solid:${n}:${askF}`, topic, prompt: `How many ${askF ? 'faces' : 'vertices (corners)'} does a ${n} have?`, visual: { type: 'emoji', emoji: e }, answer: askF ? faces : verts,
@@ -327,12 +339,12 @@ export function geometry(mode, d) {
     { visual: { type: 'shape', shape: right, color: 'blue' } }, nots.map((s) => ({ visual: { type: 'shape', shape: s, color: pick(['red', 'green', 'orange', 'purple']) } })));
   }
   if (f === 'name') {
-    const s = pick(Object.keys(POLY).filter((x) => x !== 'diamond'));
-    const others = sample(Object.keys(POLY).filter((x) => distinctShape(s, x) && !(s === 'square' && x === 'rectangle') && x !== 'diamond').concat(['pentagon', 'circle']), 3);
+    const s = pick(d === 'easy' ? ['hexagon', 'pentagon'] : Object.keys(POLY).filter((x) => x !== 'diamond'));
+    const others = sample([...Object.keys(POLY), 'circle', 'oval'].filter((x) => distinctShape(s, x) && !(s === 'square' && x === 'rectangle') && x !== 'diamond'), 3);
     return choose({ key: `geo:name:${s}`, topic, prompt: 'What is this shape called?', visual: { type: 'shape', shape: s, color: 'teal' }, explanation: `It is a ${s}.` },
       { text: s }, others.map((x) => ({ text: x })));
   }
-  const s = pick(Object.keys(POLY));
+  const s = pick(d === 'easy' ? ['triangle', 'square', 'rectangle'] : ['pentagon', 'hexagon']);
   return kp({ key: `geo:${f}:${s}`, topic, prompt: `How many ${f === 'sides' ? 'sides' : 'vertices (corners)'} does this shape have?`, visual: { type: 'shape', shape: s, color: 'purple' }, answer: POLY[s],
     explanation: `A ${s === 'diamond' ? 'rhombus' : s} has ${POLY[s]} ${f === 'sides' ? 'sides' : 'vertices'}.` });
 }
@@ -343,14 +355,14 @@ const SETS = [
   { title: 'Pets in Our Class', items: [['Dog', '🐶'], ['Cat', '🐱'], ['Fish', '🐟'], ['Bird', '🐦']] },
   { title: 'Favorite Sport', items: [['Soccer', '⚽'], ['Swim', '🏊'], ['Bike', '🚲'], ['Hoops', '🏀']] },
 ];
-export function data(mode, d) {
+export function data(mode, d, skipForms = []) {
   const topic = 'data';
   const set = pick(SETS); const step = d === 'challenge' ? 2 : 1;
   const n = by(d, 3, 4, 4);
   const vals = distinctInts(n, 2, by(d, 8, 10, 10)).map((v) => v * step);
   const items = set.items.slice(0, n).map(([label, emoji], i) => ({ label, emoji, value: vals[i] }));
   const visual = { type: 'bargraph', items, step, title: set.title };
-  const f = pick(by(d, ['read', 'most'], ['more', 'total', 'read'], ['more', 'total', 'fewer']));
+  const f = pick(by(d, ['read', 'most'], ['more', 'total', 'read'], ['more', 'total', 'fewer']).filter((x) => !skipForms.includes(x)));
   const [A, B] = sample(items, 2);
   const key = `data:${set.title}:${vals.join(',')}:${f}:${A.label}:${B.label}`;
   const scaleHint = step > 1 ? 'Careful: each line on the graph counts by 2.' : 'Read the number at the top of each bar.';

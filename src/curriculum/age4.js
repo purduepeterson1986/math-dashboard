@@ -67,13 +67,20 @@ export default {
         () => A3.counting('count10', mode, 'ready', 5, 10),
         () => (chance(0.5) ? A3.counting('count10', mode, 'stretch', 8, 10) : retopic(A5.count20(mode, 'gentle', [11, 14]), 'count10')))();
       case 'count20': return retopic(by(d, () => A5.count20(mode, 'gentle', [8, 12]), () => A5.count20(mode, 'gentle', [12, 16]), () => A5.count20(mode, 'ready', [16, 20]))(), 'count20');
-      case 'numerals': return retopic(by(d, () => A3.numerals(mode, 'ready'), () => A3.numerals(mode, 'stretch'), () => A5.teens(mode, 'gentle'))(), 'numerals');
+      case 'numerals': return retopic(by(d, () => A3.numerals(mode, 'ready'), () => A3.numerals(mode, 'stretch', 9), () => A5.teens(mode, 'gentle'))(), 'numerals');
       case 'compare': return retopic(by(d, () => A3.compare(mode, 'gentle'), () => A3.compare(mode, 'ready'), () => A5.compare(mode, 'ready'))(), 'compare');
-      case 'oneMore': return retopic(by(d, () => A3.oneMore(mode, 'gentle'), () => A3.oneMore(mode, 'ready'), () => (chance(0.5) ? A5.addition(mode, 'gentle') : A5.subtraction(mode, 'gentle')))(), 'oneMore');
-      case 'skip': return retopic(by(d, () => A5.skip(mode, 'gentle', [1]), () => A5.skip(mode, 'gentle', [10]), () => A5.skip(mode, 'ready'))(), 'skip');
-      case 'shapes': return retopic(by(d, () => A3.shapes(mode, 'ready'), () => A3.shapes(mode, 'stretch'), () => A5.shapes(mode, 'gentle'))(), 'shapes');
+      case 'oneMore': { const m2 = mode === 'flash' ? 'worksheet' : mode; // always with a picture at this age
+        return retopic(by(d, () => A3.oneMore(mode, 'gentle'), () => A3.oneMore(mode, 'ready'), () => (chance(0.5) ? A5.addition(m2, 'gentle') : A5.subtraction(m2, 'gentle')))(), 'oneMore'); }
+      case 'skip': return retopic(by(d,
+        () => A5.skip(mode, 'gentle', [1], [1, 6]),
+        () => (chance(0.5) ? A5.skip(mode, 'gentle', [1], [8, 12]) : A5.skip(mode, 'gentle', [10])),
+        () => (chance(0.5) ? A5.skip(mode, 'gentle', [1], [13, 16]) : A5.skip(mode, 'gentle', [2], [2, 4])))(), 'skip');
+      case 'shapes': return retopic(by(d, () => A3.shapes(mode, 'ready'), () => A3.shapes(mode, 'stretch'), () => A5.shapes(mode, 'ready', mode === 'flash' ? ['solid'] : ['solid', 'riddle']))(), 'shapes');
       case 'patterns': return retopic(A3.patterns(mode, d), 'patterns');
-      case 'measure': return retopic(A5.measure(mode, d), 'measure');
+      case 'measure': return retopic(by(d,
+        () => A5.measure(mode, 'gentle'),
+        () => A5.measure(mode, 'ready', mode === 'story' ? ['heavier', 'cubes'] : undefined),
+        () => A5.measure(mode, 'stretch', mode === 'story' ? ['cubes', 'ruler'] : ['ruler', 'ruler', 'cubes']))(), 'measure');
       case 'sorting': return retopic(A5.sorting(mode, d), 'sorting');
       default: return null;
     }

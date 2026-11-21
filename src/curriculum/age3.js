@@ -65,7 +65,7 @@ export function counting(topic, mode, d, lo, hi) {
   if (d === 'stretch' && fmt === 'howMany' && chance(0.5)) fmt = 'frame';
 
   if (fmt === 'find') {
-    const opts = distinctInts(3, Math.max(1, n - 3), Math.min(10, n + 3), [n]);
+    const opts = distinctInts(d === 'gentle' ? 2 : 3, Math.max(1, n - 3), Math.min(d === 'gentle' ? Math.max(5, n) : 10, n + 3), [n]);
     const { choices, answer } = makeChoices(
       { visual: { type: 'objects', emoji: t.e, count: n, compact: true } },
       opts.map((c) => ({ visual: { type: 'objects', emoji: t.e, count: c, compact: true } })),
@@ -77,10 +77,11 @@ export function counting(topic, mode, d, lo, hi) {
     };
   }
   if (fmt === 'frame') {
+    const five = d === 'gentle' && n <= 5;
     return {
-      key: `${topic}:frame:${n}`, topic, input: 'kidpad', answer: n, answerLabel: `${n}`,
-      prompt: 'How many dots in the ten frame?', visual: { type: 'tenframe', count: n },
-      speak: 'How many dots are in the ten frame?', summary: `Ten frame showing ${n}`,
+      key: `${topic}:frame:${five ? 'five:' : ''}${n}`, topic, input: 'kidpad', answer: n, answerLabel: `${n}`,
+      prompt: five ? 'How many dots in the five frame?' : 'How many dots in the ten frame?', visual: { type: 'tenframe', count: n, five },
+      speak: five ? 'How many dots are in the five frame?' : 'How many dots are in the ten frame?', summary: `Ten frame showing ${n}`,
       explanation: n > 5 ? `The top row has 5, plus ${n - 5} more makes ${n}.` : `Count them: ${n}.`,
     };
   }
@@ -104,15 +105,15 @@ export function counting(topic, mode, d, lo, hi) {
   };
 }
 
-export function numerals(mode, d) {
+export function numerals(mode, d, lo = 1) {
   const topic = 'numerals';
   const max = d === 'gentle' ? 5 : d === 'stretch' ? 20 : 10;
   const fmt = mode === 'stem' ? pick(['next', 'back']) : mode === 'story' ? 'story' : pick(['find', 'match', 'next']);
-  const n = rand(1, max);
+  const n = rand(lo, max);
 
   if (fmt === 'next' || fmt === 'back') {
     const back = fmt === 'back' && d !== 'gentle';
-    const start = back ? rand(4, max) : rand(1, max - 3);
+    const start = back ? rand(Math.max(4, lo), max) : rand(Math.min(lo, max - 3), max - 3);
     const seq = back ? [start, start - 1, start - 2] : [start, start + 1, start + 2];
     const ans = back ? start - 3 : start + 3;
     return {
@@ -126,8 +127,8 @@ export function numerals(mode, d) {
   const opts = distinctInts(d === 'gentle' ? 2 : 3, 1, max, [n]);
   if (fmt === 'match') {
     const t = pick(THINGS);
-    const m = Math.min(n, 10);
-    const o = distinctInts(3, 1, 10, [m]);
+    const m = d === 'stretch' ? rand(6, 10) : Math.min(n, 10);
+    const o = distinctInts(d === 'gentle' ? 2 : 3, 1, d === 'gentle' ? 5 : 10, [m]);
     const { choices, answer } = makeChoices({ text: String(m), big: true }, o.map((x) => ({ text: String(x), big: true })));
     return {
       key: `${topic}:match:${m}`, topic, input: 'choice', choices, answer, answerLabel: `${m}`,
@@ -204,8 +205,9 @@ export function shapes(mode, d) {
       explanation: `The others are all ${SHAPE_NAMES[main]}s. The ${SHAPE_NAMES[odd]} is different.`,
     };
   }
-  const target = pick(pool);
-  const others = sample(pool.filter((s) => distinctShape(target, s)), nOpts - 1);
+  const tPool = d === 'gentle' ? pool : d === 'ready' ? pool.filter((s) => s !== 'circle' && s !== 'square') : ['rectangle', 'heart', 'oval', 'diamond', 'hexagon'];
+  const target = pick(tPool);
+  const others = sample(pool.filter((s) => distinctShape(target, s) && !(target === 'oval' && s === 'circle') && !(target === 'circle' && s === 'oval')), nOpts - 1);
   if (fmt === 'match') {
     const c = pickColor();
     const { choices, answer } = makeChoices(
@@ -254,13 +256,14 @@ export function sizes(mode, d) {
   const scales = n === 2 ? [0.45, 1] : n === 3 ? [0.4, 0.68, 1] : [0.35, 0.55, 0.77, 1];
   const ask = mode === 'stem' && n >= 3 ? pick(['biggest', 'smallest', 'middle']) : pick(['biggest', 'smallest']);
   const idx = ask === 'biggest' ? scales.length - 1 : ask === 'smallest' ? 0 : n === 3 ? 1 : pick([1, 2]);
-  const askText = ask === 'middle' ? (n === 3 ? 'MIDDLE-sized' : 'not biggest or smallest') : ask.toUpperCase();
+  const word2 = (w) => (n === 2 ? (w === 'biggest' ? 'bigger' : 'smaller') : w);
+  const askText = ask === 'middle' ? (n === 3 ? 'MIDDLE-sized' : 'not biggest or smallest') : word2(ask).toUpperCase();
   const all = scales.map((s, i) => ({ visual: { type: 'sized', emoji: t.e, scale: s }, i }));
   const { choices, answer } = makeChoices(all[idx], all.filter((_, i) => i !== idx));
   return {
     key: `${topic}:${ask}:${t.e}:${n}`, topic, input: 'choice', choices: choices.map(({ i, ...c }) => c), answer,
     story: mode === 'story' ? { emoji: t.e, title: 'Size Parade' } : undefined,
-    answerLabel: ask, prompt: `Tap the ${askText} ${t.one}`, speak: `Tap the ${ask === 'middle' ? 'middle sized' : ask} ${t.one}.`,
+    answerLabel: ask, prompt: `Tap the ${askText} ${t.one}`, speak: `Tap the ${ask === 'middle' ? 'middle sized' : word2(ask)} ${t.one}.`,
     summary: `Find the ${ask} ${t.one}`,
     explanation: ask === 'middle' ? 'It is bigger than the smallest and smaller than the biggest.' : `That one is the ${ask}!`,
   };
@@ -307,15 +310,15 @@ export function patterns(mode, d) {
 
 export function compare(mode, d) {
   const topic = 'compare';
-  const gap = d === 'gentle' ? rand(2, 4) : d === 'stretch' ? 1 : rand(1, 3);
-  const max = d === 'gentle' ? 6 : 10;
-  const a = rand(1, max - gap);
+  const gap = d === 'gentle' ? rand(2, 3) : d === 'stretch' ? 1 : rand(1, 2);
+  const max = d === 'gentle' ? 5 : 10;
+  const a = rand(d === 'gentle' ? 1 : d === 'ready' ? 3 : 5, max - gap);
   const b = a + gap;
   const askMore = chance(0.5);
   const t = pick(THINGS);
 
   if (mode === 'stem' && d !== 'gentle') {
-    const n = d === 'stretch' ? rand(5, 9) : rand(2, 6);
+    const n = d === 'stretch' ? rand(5, 9) : rand(3, 7);
     const t2 = pick(THINGS.filter((x) => x.e !== t.e));
     const wrong = d === 'stretch' ? [n - 1, n + 1] : distinctInts(2, Math.max(1, n - 3), n + 3, [n]);
     const { choices, answer } = makeChoices(
@@ -332,7 +335,7 @@ export function compare(mode, d) {
   }
   if (mode === 'story') {
     const [p1, p2] = sample(NAMES, 2);
-    const food = pick(TREATS);
+    const food = pick(TREATS.slice(0, 8)); // snacks you can eat
     const { choices, answer } = makeChoices(
       { text: askMore ? p2 : p1, visual: { type: 'objects', emoji: food.e, count: askMore ? b : a, compact: true } },
       [{ text: askMore ? p1 : p2, visual: { type: 'objects', emoji: food.e, count: askMore ? a : b, compact: true } }],
@@ -362,8 +365,8 @@ export function oneMore(mode, d) {
   const t = pick(mode === 'story' ? TREATS : THINGS);
   let a; let b; let op;
   if (d === 'gentle') { op = '+'; a = rand(1, 4); b = 1; }
-  else if (d === 'ready') { op = pick(['+', '-']); a = op === '+' ? rand(1, 9) : rand(2, 10); b = 1; }
-  else { op = pick(['+', '-']); if (op === '+') { a = rand(1, 7); b = rand(1, 10 - a); } else { a = rand(3, 10); b = rand(1, Math.min(4, a - 1)); } }
+  else if (d === 'ready') { op = pick(['+', '-']); a = op === '+' ? rand(3, 9) : rand(4, 10); b = 1; }
+  else { op = pick(['+', '-']); if (op === '+') { a = rand(2, 6); b = rand(2, 10 - a); } else { a = rand(6, 10); b = rand(2, a - 2); } }
   const ans = op === '+' ? a + b : a - b;
   const who = name();
   const visual = op === '+'
@@ -377,7 +380,7 @@ export function oneMore(mode, d) {
       : (b === 1 ? `${a} take away 1 is…?` : `${a} take away ${b} is…?`));
   return {
     key: `${topic}:${op}:${a}:${b}:${mode === 'story' ? t.e : ''}`, topic, input: 'kidpad', answer: ans, answerLabel: `${ans}`,
-    story: mode === 'story' ? { emoji: t.e, title: op === '+' ? 'Sharing' : 'Snack Time' } : undefined,
+    story: mode === 'story' ? { emoji: t.e, title: op === '+' ? 'Sharing' : 'Munch Time' } : undefined,
     prompt, visual, speak: prompt.replace('…?', '?'),
     hints: op === '+' ? [`Start at ${a}. Count up ${b}.`] : [`Start with ${a}. The faded ones are gone. Count what's left.`],
     summary: `${a} ${op === '+' ? '+' : '−'} ${b}`, explanation: `${a} ${op === '+' ? 'plus' : 'take away'} ${b} is ${ans} ${word(ans)}.`,
@@ -406,7 +409,7 @@ export default {
     { id: 'patterns', label: 'Simple Patterns', group: 'Shapes & Sizes', icon: 'Repeat', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
-    { id: 'gentle', label: 'Gentle', detail: 'Numbers to 5, AB patterns, 2–3 choices' },
+    { id: 'gentle', label: 'Gentle', detail: 'Numbers to 5 (a peek at 6), AB patterns, 2–3 choices' },
     { id: 'ready', label: 'Ready', detail: 'Numbers to 10, one more / one less, AAB & ABB patterns' },
     { id: 'stretch', label: 'Stretch', detail: 'Add & take away within 10, teens, ABC & AABB patterns, odd-one-out' },
   ],
@@ -429,9 +432,9 @@ export default {
       if (themed) return themed;
     }
     switch (topic) {
-      case 'count5': return counting('count5', mode, d, ...(d === 'gentle' ? [1, 3] : d === 'ready' ? [1, 5] : [3, 5]));
-      case 'count10': return counting('count10', mode, d, ...(d === 'gentle' ? [6, 7] : d === 'ready' ? [7, 9] : [9, 10]));
-      case 'numerals': return numerals(mode, d);
+      case 'count5': return counting('count5', mode, d, ...(d === 'gentle' ? [1, 3] : d === 'ready' ? [2, 5] : [4, 5]));
+      case 'count10': return counting('count10', mode, d, ...(d === 'gentle' ? [5, 6] : d === 'ready' ? [6, 8] : [8, 10]));
+      case 'numerals': return numerals(mode, d, d === 'ready' ? 3 : d === 'stretch' ? 10 : 1);
       case 'shapes': return shapes(mode, d);
       case 'size': return sizes(mode, d);
       case 'patterns': return patterns(mode, d);

@@ -94,8 +94,8 @@ export function teens(mode, d) {
   if (d === 'stretch' || (mode === 'stem' && d === 'ready' && chance(0.5))) {
     const tens = rand(2, 9); const ones = rand(0, 9); const n = tens * 10 + ones;
     if (chance(0.5)) {
-      return num({ key: `${topic}:to:${n}`, topic, answer: n, prompt: `${tens} tens and ${ones} ones. What number is it?`, visual: { type: 'base10', tens, ones },
-        speak: `${tens} tens and ${ones} ones. What number is that?`, hints: ['Count the long tens by tens: 10, 20, 30.', 'Then add the little ones.'],
+      return num({ key: `${topic}:to:${n}`, topic, answer: n, prompt: `${tens} tens and ${ones} ${ones === 1 ? 'one' : 'ones'}. What number is it?`, visual: { type: 'base10', tens, ones },
+        speak: `${tens} tens and ${ones} ${ones === 1 ? 'one' : 'ones'}. What number is that?`, hints: ['Count the long tens by tens: 10, 20, 30.', 'Then add the little ones.'],
         summary: `${tens} tens ${ones} ones`, explanation: `${tens} tens is ${tens * 10}. Plus ${ones} is ${n}.` });
     }
     return num({ key: `${topic}:tens:${n}`, topic, answer: tens, prompt: `How many tens are in ${n}?`, display: String(n),
@@ -115,13 +115,13 @@ export function teens(mode, d) {
 /* ------------------------------ Addition ------------------------------ */
 const STORY_ADD = [
   (w, a, b, t) => [`${w} has ${plural(a, t.one, t.many)}. A friend gives ${w} ${b} more. How many now?`, 'Sharing'],
-  (w, a, b, t) => [`${a} ${t.many} are in the yard. ${b} more come. How many ${t.many} now?`, 'In the Yard'],
-  (w, a, b, t) => [`${w} picks ${a} ${t.many} and then ${b} more. How many in all?`, 'Picking Time'],
+  (w, a, b, t) => [`${plural(a, t.one, t.many)} ${a === 1 ? 'is' : 'are'} in the yard. ${b} more ${b === 1 ? 'comes' : 'come'}. How many ${t.many} now?`, 'In the Yard'],
+  (w, a, b, t) => [`${w} picks ${plural(a, t.one, t.many)} and then ${b} more. How many in all?`, 'Picking Time'],
 ];
 export function addition(mode, d) {
   const topic = 'add';
   const max = by(d, 6, 10, 20);
-  let a = rand(by(d, 1, 0, 3), by(d, 4, 9, 15)); let b = rand(by(d, 1, 0, 2), max - a);
+  let a = rand(by(d, 1, 1, 3), by(d, 4, 9, 15)); let b = rand(by(d, 1, 1, 2), max - a);
   if (d === 'stretch' && a + b < 11) { a = rand(6, 10); b = rand(11 - a, Math.min(10, 20 - a)); }
   const s = a + b;
   const t = pick(THINGS);
@@ -153,7 +153,7 @@ export function subtraction(mode, d) {
   const t = pick(THINGS);
   if (mode === 'stem') {
     const whole = rand(by(d, 5, 6, 12), max); const left = rand(0, whole - 1);
-    return num({ key: `${topic}:missing:${whole}:${left}`, topic, answer: whole - left, prompt: `${whole} take away what leaves ${left}?`, display: `${whole} − ? = ${left}`,
+    return num({ key: `${topic}:missing:${whole}:${left}`, topic, answer: whole - left, prompt: `${whole} take away what leaves ${left}?`, display: `${whole} − ? = ${left}`, visual: { type: 'numberbond', whole, parts: [left, null] },
       speak: `${whole} take away what number leaves ${left}?`, hints: [`Count back from ${whole} until you reach ${left}.`],
       summary: `${whole} − ? = ${left}`, explanation: `${whole} − ${whole - left} = ${left}.` });
   }
@@ -196,7 +196,10 @@ export function compare(mode, d) {
   const topic = 'compare';
   const [lo, hi] = by(d, [1, 10], [1, 20], [10, 99]);
   if (mode === 'story') {
-    const [p1, p2] = sample(NAMES, 2); const [a, b] = distinctInts(2, lo, hi); const t = pick(THINGS);
+    const [p1, p2] = sample(NAMES, 2); const t = pick(THINGS);
+    const maxGap = by(d, 5, 7, 30); let a = rand(lo, hi); let b = rand(lo, hi);
+    for (let tries = 0; tries < 30 && (a === b || Math.abs(a - b) > maxGap); tries++) { a = rand(lo, hi); b = rand(lo, hi); }
+    if (a === b) b = a < hi ? a + 1 : a - 1;
     const askMore = chance(0.5);
     const win = (askMore ? a > b : a < b) ? p1 : p2;
     return choose({ key: `${topic}:story:${a}:${b}:${askMore}`, topic, story: { emoji: t.e, title: 'Who Has More?' },
@@ -227,10 +230,10 @@ export function compare(mode, d) {
 }
 
 /* ----------------------------- Skip counting ----------------------------- */
-export function skip(mode, d, steps) {
+export function skip(mode, d, steps, startRange) {
   const topic = 'skip';
   let step; let start; let back = false;
-  if (steps) { step = pick(steps); start = step === 10 ? 10 * rand(1, 3) : rand(3, 14); }
+  if (steps) { step = pick(steps); start = startRange ? rand(startRange[0], startRange[1]) : step === 10 ? 10 * rand(1, 3) : rand(3, 14); }
   else if (d === 'gentle') { step = pick([1, 10]); start = step === 10 ? 10 : rand(3, 14); }
   else if (d === 'ready') { step = pick([2, 5, 10]); start = step * rand(1, 5); }
   else { step = pick([2, 5, 10, 10]); back = chance(0.35); start = step === 10 ? rand(1, 9) + 10 * rand(1, 4) : step * rand(2, 12); }
@@ -245,10 +248,11 @@ export function skip(mode, d, steps) {
 }
 
 /* ------------------------------- Shapes ------------------------------- */
-export function shapes(mode, d) {
+export function shapes(mode, d, fmts) {
   const topic = 'shapes';
   let fmt = mode === 'stem' ? pick(d === 'gentle' ? ['solid', 'sides'] : ['solid', 'sides', 'corners']) : mode === 'story' ? 'solid' : pick(['find', 'solid', 'find']);
-  if (d === 'stretch' && mode !== 'flash' && chance(0.65)) fmt = 'riddle';
+  if (fmts) fmt = pick(fmts);
+  else if (d === 'stretch') fmt = mode === 'flash' ? pick(['sides', 'corners', 'corners']) : pick(['riddle', 'riddle', 'corners']);
   const pool = by(d, SHAPES_2D.slice(0, 5), SHAPES_2D.slice(0, 7), SHAPES_2D);
   if (fmt === 'riddle') {
     const clues = [
@@ -292,9 +296,10 @@ export function shapes(mode, d) {
 
 /* ----------------------------- Measurement ----------------------------- */
 const STICK_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f97316'];
-export function measure(mode, d) {
+export function measure(mode, d, fmts) {
   const topic = 'measure';
-  const fmt = mode === 'story' ? pick(by(d, ['heavier'], ['heavier', 'diff'], ['diff'])) : mode === 'stem' ? pick(by(d, ['cubes', 'longest'], ['cubes', 'longest', 'diff'], ['ruler', 'diff', 'cubes'])) : pick(by(d, ['longest', 'cubes'], ['cubes', 'longest', 'heavier'], ['ruler', 'cubes', 'diff']));
+  const fmt0 = mode === 'story' ? pick(by(d, ['heavier'], ['heavier', 'diff', 'diff'], ['diff'])) : mode === 'stem' ? pick(by(d, ['cubes', 'longest'], ['cubes', 'longest', 'diff'], ['ruler', 'diff'])) : pick(by(d, ['longest', 'cubes'], ['cubes', 'longest', 'heavier'], ['ruler', 'ruler', 'diff']));
+  const fmt = fmts ? pick(fmts) : fmt0;
   if (fmt === 'cubes') {
     const len = rand(2, by(d, 6, 9, 10)); const e = pick(['🖍️', '✏️', '🖌️', '🥕']);
     return num({ key: `${topic}:cubes:${len}:${e}`, topic, answer: len, prompt: 'How many cubes long is it?', visual: { type: 'cubes', length: len, emoji: e },
@@ -307,7 +312,7 @@ export function measure(mode, d) {
   }
   if (fmt === 'diff') {
     const a = rand(4, by(d, 7, 9, 10)); const b = rand(1, a - 1); const cols = sample(['red', 'blue', 'green', 'yellow'], 2);
-    const text = `The ${cols[0]} crayon is ${a} cubes long. The ${cols[1]} crayon is ${b} cubes long. How many cubes longer is the ${cols[0]} crayon?`;
+    const text = `The ${cols[0]} crayon is ${a} cubes long. The ${cols[1]} crayon is ${b} ${b === 1 ? 'cube' : 'cubes'} long. How many cubes longer is the ${cols[0]} crayon?`;
     return num({ key: `${topic}:diff:${a}:${b}`, topic, answer: a - b, story: mode === 'story' ? { emoji: '🖍️', title: 'Crayon Contest' } : undefined,
       prompt: text, speak: text, visual: { type: 'emojiset', items: ['🖍️'] }, hints: [`Count up from ${b} to ${a}.`],
       summary: `${a} vs ${b} cubes`, explanation: `${a} − ${b} = ${a - b}. The ${cols[0]} crayon is ${a - b} cubes longer.` });
@@ -323,9 +328,9 @@ export function measure(mode, d) {
   const askLong = chance(0.5);
   const target = askLong ? Math.max(...lens) : Math.min(...lens);
   const cols = sample(STICK_COLORS, lens.length);
-  return choose({ key: `${topic}:sticks:${[...lens].sort().join(',')}:${askLong}`, topic, prompt: `Tap the ${askLong ? 'LONGEST' : 'SHORTEST'} stick`,
-    speak: `Tap the ${askLong ? 'longest' : 'shortest'} stick.`, answerLabel: askLong ? 'longest' : 'shortest', summary: `${askLong ? 'Longest' : 'Shortest'} stick`,
-    explanation: `That stick is the ${askLong ? 'longest' : 'shortest'}.` },
+  return choose({ key: `${topic}:sticks:${[...lens].sort().join(',')}:${askLong}`, topic, prompt: `Tap the ${askLong ? (lens.length === 2 ? 'LONGER' : 'LONGEST') : (lens.length === 2 ? 'SHORTER' : 'SHORTEST')} stick`,
+    speak: `Tap the ${askLong ? (lens.length === 2 ? 'longer' : 'longest') : (lens.length === 2 ? 'shorter' : 'shortest')} stick.`, answerLabel: askLong ? 'longest' : 'shortest', summary: `${askLong ? 'Longer' : 'Shorter'} stick`,
+    explanation: `That stick is the ${askLong ? (lens.length === 2 ? 'longer' : 'longest') : (lens.length === 2 ? 'shorter' : 'shortest')}.` },
   { visual: { type: 'stick', len: target, color: cols[0] } }, lens.filter((l) => l !== target).map((l, i) => ({ visual: { type: 'stick', len: l, color: cols[i + 1] } })));
 }
 
@@ -333,7 +338,7 @@ export function measure(mode, d) {
 const COLOR_SHAPES = { red: ['🔴', '🟥'], blue: ['🔵', '🟦'], green: ['🟢', '🟩'], yellow: ['🟡', '🟨'] };
 export function sorting(mode, d) {
   const topic = 'sorting';
-  const fmt = mode === 'stem' ? pick(['odd', 'attr']) : mode === 'story' ? 'count' : pick(['odd', 'count', 'attr']);
+  const fmt = mode === 'stem' ? pick(['odd', 'attr']) : mode === 'story' ? (d === 'stretch' ? 'attr' : 'count') : d === 'stretch' ? pick(['attr', 'attr', 'odd']) : pick(['odd', 'count', 'attr']);
   if (fmt === 'odd') {
     const [cat, other] = sample(Object.keys(CATEGORIES), 2);
     const main = sample(CATEGORIES[cat], 3); const odd = pick(CATEGORIES[other]);
@@ -350,7 +355,7 @@ export function sorting(mode, d) {
     const c = pick(cols); const sq = chance(0.5);
     const ans = items.filter((e) => e === COLOR_SHAPES[c][sq ? 1 : 0]).length;
     const mixed = shuffle(items);
-    return num({ key: `${topic}:attr:${mixed.join('')}:${c}:${sq}`, topic, answer: ans, prompt: `How many ${c.toUpperCase()} ${sq ? 'SQUARES' : 'CIRCLES'}?`,
+    return num({ key: `${topic}:attr:${mixed.join('')}:${c}:${sq}`, topic, story: mode === 'story' ? { emoji: '🧺', title: 'Sorting Time' } : undefined, answer: ans, prompt: `How many ${c.toUpperCase()} ${sq ? 'SQUARES' : 'CIRCLES'}?`,
       visual: { type: 'emojiset', items: mixed }, speak: `How many ${c} ${sq ? 'squares' : 'circles'} are there?`,
       hints: [`Look for shapes that are ${c} AND ${sq ? 'square' : 'round'}.`], summary: `Count ${c} ${sq ? 'squares' : 'circles'}`,
       explanation: `There are ${ans} ${c} ${sq ? 'squares' : 'circles'}.` });
@@ -368,10 +373,10 @@ export function sorting(mode, d) {
 
 /* -------------------------------- Time -------------------------------- */
 const tstr = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
-export function time(mode, d) {
+export function time(mode, d, ms) {
   const topic = 'time';
   const h = rand(1, 12);
-  const m = d === 'gentle' ? 0 : d === 'ready' ? pick([0, 0, 30]) : pick([0, 30]);
+  const m = ms ? pick(ms) : d === 'gentle' ? 0 : d === 'ready' ? pick([0, 0, 30]) : pick([0, 30]);
   if (d === 'stretch' && (mode === 'story' || mode === 'stem')) {
     // half an hour later (a first step into elapsed time)
     const m0 = pick([0, 30]); const nh = m0 === 0 ? h : (h % 12) + 1; const nm = m0 === 0 ? 30 : 0;
@@ -384,7 +389,7 @@ export function time(mode, d) {
       explanation: `Half an hour after ${tstr(h, m0)} is ${right}.` },
     { text: right }, wrong.map((x) => ({ text: x })));
   }
-  if (mode === 'story' || (d === 'ready' && mode === 'stem' && chance(0.5))) {
+  if (d !== 'gentle' && (mode === 'story' || (d === 'ready' && mode === 'stem' && chance(0.5)))) {
     const later = 1; const nh = (h % 12) + later;
     const who = name();
     const text = `${who} starts reading at the time on the clock. ${who} reads for 1 hour. What time is it then?`;
@@ -397,7 +402,7 @@ export function time(mode, d) {
   const opts = new Set([tstr(h, m)]);
   const cand = [tstr((h % 12) + 1, m), tstr(h, m === 0 ? 30 : 0), tstr(((h + 10) % 12) + 1, m), tstr(m === 0 ? 12 - (h % 12) || 12 : h, m)];
   for (const c of cand) { if (opts.size >= by(d, 3, 3, 4)) break; opts.add(c); }
-  return choose({ key: `${topic}:read:${h}:${m}`, topic, prompt: 'What time is it?', visual: { type: 'clock', h, m },
+  return choose({ key: `${topic}:read:${h}:${m}`, topic, story: mode === 'story' ? { emoji: '⏰', title: 'What Time Is It?' } : undefined, prompt: 'What time is it?', visual: { type: 'clock', h, m },
     speak: 'What time does the clock show?', hints: [m === 0 ? "The long hand points to 12, so it's o'clock." : 'The long hand points to 6, so it is half past.', 'The short hand shows the hour.'],
     summary: `Clock at ${tstr(h, m)}`, explanation: m === 0 ? `It is ${h} o'clock, ${tstr(h, m)}.` : `It is half past ${h}, ${tstr(h, m)}.` },
   { text: tstr(h, m) }, [...opts].slice(1).map((x) => ({ text: x })));

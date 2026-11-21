@@ -91,10 +91,10 @@ function subtraction(mode, d) {
 function multiplication(mode, d) {
   let a; let b; let sa = 1; let sb = 1;
   if (mode === 'flash') {
-    if (d === 'easy') { a = rand(3, 12); b = rand(3, 12); }
-    else if (d === 'standard') { a = rand(12, 99); b = rand(3, 9); }
+    if (d === 'easy') { a = rand(6, 12); b = rand(6, 12); }
+    else if (d === 'standard') { if (chance(0.5)) { a = rand(51, 99); b = rand(6, 9); } else { a = rand(12, 29); b = rand(11, 15); } }
     else if (chance(0.5)) { a = rand(11, 39); b = rand(11, 25); }
-    else { a = rand(2, 9); b = rand(2, 12); sa = 10; } // 0.7 × 8
+    else { a = rand(3, 9); b = rand(3, 9); sa = 10; } // 0.7 × 8
   } else if (d === 'easy') { a = rand(12, 99); b = rand(3, 9); }
   else if (d === 'standard') { if (chance(0.5)) { a = rand(101, 999); b = rand(12, 99); } else { a = rand(101, 999); b = rand(3, 9); sa = 100; } }
   else { a = rand(11, 99); b = rand(101, 999); sa = 10; sb = 100; }
@@ -149,7 +149,12 @@ function integers(mode, d) {
     return kp({ key: `int:mix:${a}:${b}:${c}:${e}`, topic, display: `${p(a)} × (${fmt(b)} + ${p(c)}) − ${e}`, answer: ans(r),
       explanation: `Parentheses: ${fmt(b)} + ${p(c)} = ${fmt(b + c)}. Then ${p(a)} × ${p(b + c)} = ${fmt(a * (b + c))}. Minus ${e} = ${fmt(r)}` });
   }
-  const ops = d === 'easy' ? ['+', '−'] : ['+', '−', '×', '÷'];
+  if (d === 'challenge' && mode === 'flash' && chance(0.7)) {
+    const a = nz(-12, 12); const b = nz(-12, 12); const e = rand(2, 20); const plus = chance(0.5); const r = a * b + (plus ? e : -e);
+    return kp({ key: `int:fl:${a}:${b}:${e}:${plus}`, topic, display: `${p(a)} × ${p(b)} ${plus ? '+' : '−'} ${e}`, answer: ans(r),
+      explanation: `${p(a)} × ${p(b)} = ${fmt(a * b)}. Then ${plus ? 'add' : 'subtract'} ${e}: ${fmt(r)}` });
+  }
+  const ops = d === 'easy' ? ['+', '−'] : d === 'challenge' ? ['×', '÷', '×'] : ['+', '−', '×', '÷'];
   const op = pick(ops);
   const R = by(d, 20, 30, 60);
   let a; let b; let r;
@@ -221,7 +226,7 @@ function fracdec(mode, d) {
       explanation: `Multiply across: ${F(a * b, d1 * d2)} = ${FR(a * b, d1 * d2)}` });
   }
   if (f === 'divf') {
-    const d1 = pick(dens); const d2 = pick(dens);
+    const d1 = pick(dens); let d2 = pick(dens); while (d2 === d1) d2 = pick(dens);
     const a = rand(1, d1 - 1); const b = rand(1, d2 - 1);
     return kp({ key: `fd:div:${a}/${d1}:${b}/${d2}`, topic, display: `${F(a, d1)} ÷ ${F(b, d2)}`, answer: frac(a * d2, d1 * b),
       explanation: `Keep, change, flip: ${F(a, d1)} × ${F(d2, b)} = ${F(a * d2, d1 * b)} = ${FR(a * d2, d1 * b)}` });
@@ -322,10 +327,10 @@ function balanceScale(d) {
 function ratio(mode, d) {
   const topic = 'ratio';
   if (mode === 'story') return percentStory(d);
-  if (mode === 'stem') return ratioTape(d);
+  if (mode === 'stem' && d !== 'easy') return ratioTape(d);
   const forms = mode === 'flash'
-    ? by(d, ['pctEasy', 'equiv'], ['pct', 'equiv', 'unit'], ['pct', 'whole', 'change'])
-    : by(d, ['pctEasy', 'equiv', 'unit'], ['pct', 'whole', 'unit', 'equiv'], ['change', 'whole', 'reverse', 'pct']);
+    ? by(d, ['pctEasy', 'equiv'], ['pct', 'equiv', 'unit'], ['whole', 'change', 'change'])
+    : by(d, ['pctEasy', 'equiv', 'unit'], ['pct', 'whole', 'unit', 'equiv'], ['change', 'whole', 'reverse', 'change']);
   const f = pick(forms);
   if (f === 'pctEasy' || f === 'pct') {
     const pc = f === 'pctEasy' ? pick([10, 20, 25, 50, 75]) : pick([5, 12, 15, 30, 35, 40, 45, 60, 65, 80, 120, 150]);
@@ -613,7 +618,7 @@ function rates(mode, d) {
     const r = pick([12, 15, 20, 30, 40, 45, 48, 60].filter((x) => x >= vlo && x <= vhi * 1.5).concat([vhi]).slice(0, 8)); const mins = pick([10, 15, 20, 25, 30, 40, 45, 50]);
     const dd = (r * mins) / 60;
     if (dd !== Math.round(dd * 4) / 4) return rates(mode, d);
-    return kp({ key: `rt:min:${r}:${mins}`, topic, story, prompt: `${who} ${verb} at ${r} mph. How many minutes to go ${fmt(dd)} miles?`, answer: ans(mins),
+    return kp({ key: `rt:min:${r}:${mins}`, topic, story, prompt: `${who} ${verb} at ${r} mph. How many minutes to go ${fmt(dd)} ${dd === 1 ? 'mile' : 'miles'}?`, answer: ans(mins),
       hints: [`${r} mph means 1 mile every ${fmt(60 / r)} minutes.`], explanation: `${fmt(dd)} ÷ ${r} = ${fmt(mins / 60)} h = ${mins} minutes` });
   }
   if (f === 'meet') {
@@ -627,7 +632,7 @@ function rates(mode, d) {
   if (f === 'catch') {
     const r1 = rand(3, 6); const r2 = r1 + rand(2, 4); const head = (r2 - r1) * pick([0.5, 1, 1.5, 2]);
     return kp({ key: `rt:catch:${r1}:${r2}:${head}`, topic, story: { emoji: '🏃', title: 'The Chase' },
-      prompt: `${who} starts ${fmt(head)} miles ahead, running ${r1} mph. A friend chases at ${r2} mph. How many hours until the friend catches up?`,
+      prompt: `${who} starts ${fmt(head)} ${head === 1 ? 'mile' : 'miles'} ahead, running ${r1} mph. A friend chases at ${r2} mph. How many hours until the friend catches up?`,
       answer: ans(head / (r2 - r1)), hints: [`The gap shrinks by ${r2} − ${r1} = ${r2 - r1} miles each hour.`],
       explanation: `${fmt(head)} ÷ ${r2 - r1} = ${fmt(head / (r2 - r1))} hours` });
   }
@@ -649,9 +654,9 @@ function rates(mode, d) {
 
 function stats(mode, d) {
   const topic = 'stats';
-  const forms = by(d, ['mean', 'median', 'range'], ['mean', 'median', 'mode', 'missing'], ['missing', 'median', 'newMean', 'mean']);
+  const forms = by(d, ['mean', 'median', 'range'], ['mean', 'median', 'mode', 'missing'], ['missing', 'median', 'mean']);
   const f = pick(forms);
-  const n = by(d, 5, 6, 7);
+  const n = by(d, 5, 6, f === 'median' ? 8 : 7);
   if (f === 'missing' || f === 'newMean') {
     const target = rand(70, 92); const k = by(d, 4, 4, 5);
     const vals = Array.from({ length: k - 1 }, () => target + rand(-10, 10));
@@ -869,7 +874,7 @@ function arithmeticStory(topic, d) {
         return { e: '🚌', title: 'Field Trip', text: `${kids} students are going on a field trip. Each bus holds ${cap} students.`, q: 'How many buses are needed?', a: Math.ceil(kids / cap),
           hints: [`${kids} ÷ ${cap} = ${Math.floor(kids / cap)} remainder ${kids % cap}.`, 'Can the leftover students stay home?'], ex: `${Math.floor(kids / cap)} full buses + 1 more for the remaining ${kids % cap}.` };
       }
-      const per = pick([6, 8, 12, 15, 16, 24]); const boxes = rand(12, 60);
+      const per = pick([4, 5, 6, 8, 10, 12]); const boxes = rand(8, 30);
       return { e: '🍪', title: 'Bake Sale', text: `The club baked ${per * boxes} cookies and packs them ${per} to a box.`, q: 'How many boxes do they fill?', a: boxes, hints: [`Divide ${per * boxes} by ${per}.`], ex: `${per * boxes} ÷ ${per} = ${boxes}` };
     },
   };
@@ -878,7 +883,7 @@ function arithmeticStory(topic, d) {
 }
 
 function integerStory(d) {
-  const t0 = d === 'easy' ? rand(-6, 4) : rand(-15, 5); const up = d === 'easy' ? rand(3, 10) : rand(6, 25); const down = d === 'easy' ? rand(2, 8) : rand(3, 18);
+  const t0 = d === 'easy' ? rand(-9, -2) : rand(-15, 5); const up = d === 'easy' ? rand(3, 10) : rand(6, 25); const down = d === 'easy' ? rand(2, 8) : rand(3, 18);
   if (chance(0.5)) {
     const r = t0 + up - down;
     return kp({ key: `story:int:temp:${t0}:${up}:${down}`, topic: 'integers', story: { emoji: '🌡️', title: 'Wild Weather' },

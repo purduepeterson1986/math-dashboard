@@ -53,6 +53,7 @@ export function ShapeSVG({ shape, color = 'blue', size = 1, rotate = 0, px = 96 
     case 'heart': el = <path d="M50 88 C20 66 6 50 6 32 C6 18 17 8 30 8 C40 8 46 14 50 22 C54 14 60 8 70 8 C83 8 94 18 94 32 C94 50 80 66 50 88Z" {...common} />; break;
     case 'oval': el = <ellipse cx="50" cy="50" rx="45" ry="30" {...common} />; break;
     case 'diamond': el = <polygon points="50,4 88,50 50,96 12,50" {...common} />; break;
+    case 'pentagon': el = <polygon points={polyPoints(5, 45, 50, 53, -90)} {...common} />; break;
     case 'hexagon': el = <polygon points={polyPoints(6, 45, 50, 50, 0)} {...common} />; break;
     default: el = <circle cx="50" cy="50" r="40" {...common} />;
   }
@@ -118,8 +119,8 @@ function Objects({ v, size }) {
   );
 }
 
-function TenFrame({ count, size }) {
-  const frames = Math.max(1, Math.ceil(count / 10));
+function TenFrame({ count, size, five }) {
+  const frames = five ? 1 : Math.max(1, Math.ceil(count / 10));
   if (frames > 1) {
     return (
       <div className="flex flex-wrap justify-center gap-3">
@@ -130,7 +131,7 @@ function TenFrame({ count, size }) {
   const cell = size === 'lg' ? 64 : size === 'md' ? 52 : 34;
   return (
     <div className="inline-grid grid-cols-5 border-4 border-ink/70 rounded-lg overflow-hidden bg-white">
-      {Array.from({ length: 10 }, (_, i) => (
+      {Array.from({ length: five ? 5 : 10 }, (_, i) => (
         <div key={i} className="flex items-center justify-center border border-ink/30" style={{ width: cell, height: cell }}>
           {i < count && <div className="rounded-full bg-rose-500 shadow-inner" style={{ width: cell * 0.68, height: cell * 0.68 }} />}
         </div>
@@ -385,7 +386,7 @@ export default function Visual({ v, size = 'lg' }) {
     case 'emoji': return <span className="leading-none select-none" style={{ fontSize: S.emoji * 1.7 * (v.size || 1) }}>{v.emoji}</span>;
     case 'shape': return <ShapeSVG shape={v.shape} color={v.color} size={v.size || 1} rotate={v.rotate} px={S.shape} />;
     case 'sized': return <span className="leading-none select-none inline-flex items-end justify-center" style={{ fontSize: S.emoji * 1.9 * v.scale, height: S.emoji * 1.9 }}>{v.emoji}</span>;
-    case 'tenframe': return <TenFrame count={v.count} size={size} />;
+    case 'tenframe': return <TenFrame count={v.count} size={size} five={v.five} />;
     case 'clock': return <Clock h={v.h} m={v.m} px={size === 'lg' ? 240 : size === 'md' ? 210 : 110} />;
     case 'coins': return <Coins coins={v.coins} small={size === 'sm'} />;
     case 'ruler': return <Ruler {...v} />;

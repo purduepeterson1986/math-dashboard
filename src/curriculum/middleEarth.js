@@ -31,7 +31,7 @@ function choose(o, correct, wrong) {
   return { input: 'choice', choices, answer, answerLabel: correct.text ?? o.answerLabel ?? 'picture', ...o };
 }
 const small = (o) => ({ ...o, input: Number(o.answer) <= 10 ? 'kidpad' : 'keypad', answer: String(o.answer), answerLabel: String(o.answer) });
-const typed = (o) => ({ input: 'keypad', answerLabel: String(o.answer), ...o, answer: String(o.answer) });
+const typed = (o) => ({ input: 'keypad', answerLabel: Number.isInteger(o.answer) && Math.abs(o.answer) >= 1000 ? o.answer.toLocaleString('en-US') : String(o.answer), ...o, answer: String(o.answer) });
 const frac = (n, d) => { const g = gcd(n, d); return d / g === 1 ? String(n / g) : `${n / g}/${d / g}`; };
 const F = (n, d) => `[[${n}/${d}]]`;
 const FR = (n, d) => { const s = frac(n, d); return s.includes('/') ? `[[${s}]]` : s; };
@@ -75,8 +75,8 @@ function countHobbits(topic, lo, hi, mixed) {
 /* ------------------------------------ Age 3 ------------------------------------ */
 export function themed3(mode, topic, d) {
   if (topic === 'size') return whoTaller(topic, mode, d === 'gentle' ? 2 : d === 'ready' ? 3 : 4);
-  if (topic === 'count5') return countHobbits(topic, d === 'gentle' ? 1 : d === 'ready' ? 2 : 3, d === 'gentle' ? 3 : 5, d === 'stretch' || (mode === 'stem' && d === 'ready'));
-  if (topic === 'count10') return countHobbits(topic, d === 'gentle' ? 6 : d === 'ready' ? 7 : 9, d === 'gentle' ? 7 : d === 'ready' ? 9 : 10, d === 'stretch' || (mode === 'stem' && d === 'ready') || (d === 'ready' && chance(0.4)));
+  if (topic === 'count5') return countHobbits(topic, d === 'gentle' ? 1 : d === 'ready' ? 2 : 4, d === 'gentle' ? 3 : 5, d === 'stretch');
+  if (topic === 'count10') return countHobbits(topic, d === 'gentle' ? 5 : d === 'ready' ? 6 : 8, d === 'gentle' ? 6 : d === 'ready' ? 8 : 10, d === 'stretch');
   if (topic === 'patterns') {
     const type = d === 'gentle' ? 'AB' : d === 'ready' ? pick(['AAB', 'ABB']) : pick(['ABC', 'AABB', 'ABBC']);
     const letters = [...new Set(type.split(''))];
@@ -92,10 +92,10 @@ export function themed3(mode, topic, d) {
     }, { visual: { type: 'character', id: ans, px: 110 } }, ids.filter((x) => x !== ans).map((x) => ({ visual: { type: 'character', id: x, px: 110 } })));
   }
   if (topic === 'compare' && mode !== 'story') {
-    const x = d === 'gentle' ? rand(1, 3) : d === 'ready' ? rand(2, 6) : rand(3, 9); const y = x + (d === 'gentle' ? rand(2, 3) : d === 'ready' ? rand(1, 2) : 1); const askMore = chance(0.5);
+    const x = d === 'gentle' ? rand(1, 2) : d === 'ready' ? rand(3, 8) : rand(5, 9); const y = x + (d === 'gentle' ? rand(2, 3) : d === 'ready' ? rand(1, 2) : 1); const askMore = chance(0.5);
     return choose({
       key: `me:compare:${x}:${y}:${askMore}`, topic, prompt: `Which group has ${askMore ? 'MORE' : 'FEWER'} hobbits?`,
-      speak: `Which group has ${askMore ? 'more' : 'fewer'} hobbits?`, answerLabel: `${askMore ? y : x} hobbits`, summary: `${x} vs ${y} hobbits`, explanation: `${y} is more than ${x}.`,
+      speak: `Which group has ${askMore ? 'more' : 'fewer'} hobbits?`, answerLabel: `${askMore ? y : x} hobbit${(askMore ? y : x) === 1 ? '' : 's'}`, summary: `${x} vs ${y} hobbits`, explanation: `${y} is more than ${x}.`,
     }, { visual: { type: 'crowd', ids: hobbitCrowd(askMore ? y : x), px: 50 } }, [{ visual: { type: 'crowd', ids: hobbitCrowd(askMore ? x : y), px: 50 } }]);
   }
   return null;
@@ -141,7 +141,9 @@ export function themed5(mode, topic, d) {
       hints: [`Start at ${a}. Count back ${b}.`], summary: `${a} − ${b} (Shire)`, explanation: `${a} take away ${b} leaves ${a - b}.` });
   }
   if (topic === 'compare' && mode === 'story') {
-    const top = d === 'gentle' ? 9 : d === 'ready' ? 18 : 45; const [p, q] = sample(HOBBITS, 2); const x = rand(d === 'stretch' ? 12 : 3, top); let y = rand(d === 'stretch' ? 12 : 3, top); if (y === x) y += 2;
+    const top = d === 'gentle' ? 9 : d === 'ready' ? 18 : 45; const [p, q] = sample(HOBBITS, 2); const lo2 = d === 'stretch' ? 12 : 3; const x = rand(lo2, top); let y = rand(lo2, top);
+    for (let tries = 0; tries < 30 && (y === x || Math.abs(x - y) > (d === 'gentle' ? 5 : d === 'ready' ? 7 : 30)); tries++) y = rand(lo2, top);
+    if (y === x) y = x < top ? x + 1 : x - 1;
     const more = chance(0.5); const win = (more ? x > y : x < y) ? p : q;
     return choose({ key: `me:compare:${p}:${q}:${x}:${y}:${more}`, topic, story: { emoji: '🍄', title: 'Mushroom Hunt' },
       prompt: `${nameOf(p)} found ${x} mushrooms. ${nameOf(q)} found ${y}. Who found ${more ? 'MORE' : 'FEWER'}?`,
@@ -156,15 +158,23 @@ export function themed5(mode, topic, d) {
       answer: n * 5, speak: 'Each hobbit carries 5 mushrooms. Count by fives. How many mushrooms are there?', hints: ['Count 5, 10, 15, 20…'],
       summary: `${n} hobbits with 5 mushrooms`, explanation: `${n} hobbits with 5 each: ${Array.from({ length: n }, (_, i) => 5 * (i + 1)).join(', ')}. That's ${n * 5}.` });
   }
+  if (topic === 'skip' && d === 'gentle') return null; // counting by 2s starts at Advanced
   if (topic === 'skip') {
-    const n = rand(3, d === 'gentle' ? 5 : 10);
+    const n = rand(3, 10);
     return small({ key: `me:skip:feet:${n}`, topic, prompt: 'Hobbits have big hairy feet! Count by 2s. How many feet?', visual: { type: 'crowd', ids: hobbitCrowd(n) },
       answer: n * 2, speak: 'Hobbits have big hairy feet. Count by twos. How many feet are there?', hints: ['Each hobbit has 2 feet.', 'Count 2, 4, 6, 8…'],
       summary: `${n} hobbits' feet`, explanation: `${n} hobbits with 2 feet each: ${Array.from({ length: n }, (_, i) => 2 * (i + 1)).join(', ')}. That's ${n * 2} feet.` });
   }
   if (topic === 'sorting') {
-    const n = rand(2, 6);
-    const ids = shuffle([...hobbitCrowd(n), ...Array.from({ length: rand(2, 4) }, () => pick(['gandalf', 'gimli', 'legolas', 'aragorn', 'boromir']))]);
+    const n = d === 'gentle' ? rand(2, 4) : d === 'ready' ? rand(2, 6) : rand(4, 8);
+    const others = d === 'gentle' ? rand(1, 2) : d === 'ready' ? rand(2, 4) : rand(3, 6);
+    const ids = shuffle([...hobbitCrowd(n), ...Array.from({ length: others }, () => pick(['gandalf', 'gimli', 'legolas', 'aragorn', 'boromir']))]);
+    if (d === 'stretch' && chance(0.5)) {
+      return small({ key: `me:sorting:not:${ids.join(',')}`, topic, story: mode === 'story' ? { emoji: '🧺', title: 'Who Is NOT a Hobbit?' } : undefined,
+        prompt: 'How many are NOT hobbits?', visual: { type: 'crowd', ids, toScale: true }, answer: others,
+        speak: 'How many are not hobbits? Count only the ones who are not hobbits.', hints: ['Hobbits are the short ones with curly hair.', 'Count the others.'],
+        summary: `Sort: ${others} not hobbits`, explanation: `${others} of them are not hobbits.` });
+    }
     return small({ key: `me:sorting:${ids.join(',')}`, topic, story: mode === 'story' ? { emoji: '🧺', title: 'Who Is a Hobbit?' } : undefined,
       prompt: 'How many HOBBITS are in the group?', visual: { type: 'crowd', ids, toScale: true }, answer: n,
       speak: 'How many hobbits are in the group? Only count the hobbits.', hints: ['Hobbits are the short ones with curly hair.'],
@@ -196,7 +206,7 @@ export function themed7(mode, topic, d) {
   }
   if (topic === 'money' && (mode === 'story' || mode === 'stem')) {
     const price = rand(by(12, 25, 115), by(45, 95, 450)); const paid = d === 'easy' ? 50 : price < 100 ? 100 : Math.ceil(price / 100) * 100;
-    const item = pick(['a coil of elven rope', 'a bag of pipe-weed', 'a loaf of bread', 'a new cooking pan', 'a lantern']);
+    const item = pick(['a coil of elven rope', 'a bag of dried apples', 'a loaf of bread', 'a new cooking pan', 'a lantern']);
     return typed({ key: `me:money:${price}:${paid}`, topic, story: { emoji: '🛒', title: 'Market in Bree' }, answer: paid - price,
       prompt: `At the market in Bree, Sam buys ${item} for ${money(price)}. He pays with ${money(paid)}. How much change, in cents?`,
       hints: [`Count up from ${money(price)} to ${money(paid)}.`], explanation: `${paid} − ${price} = ${paid - price}¢ change.` });
@@ -218,10 +228,10 @@ export function themed7(mode, topic, d) {
   }
   if (topic === 'puzzles' && d !== 'easy') {
     const g = d === 'challenge' ? rand(15, 45) : rand(4, 12); const more = d === 'challenge' ? rand(5, 15) : rand(2, 6);
-    return typed({ key: `me:puzzles:orcs:${g}:${more}`, topic, story: { emoji: '🪓', title: 'Gimli and Legolas' }, answer: g,
-      prompt: `Gimli and Legolas have a contest. Legolas counts ${more} more orcs than Gimli. Together they count ${2 * g + more}. How many did Gimli count?`,
-      hints: [`Take away Legolas's extra ${more}: ${2 * g + more} − ${more} = ${2 * g}.`, 'Now split that equally between the two.'],
-      explanation: `${2 * g + more} − ${more} = ${2 * g}, and half of ${2 * g} is ${g}. Gimli counted ${g}; Legolas counted ${g + more}.` });
+    return typed({ key: `me:puzzles:orcs:${g}:${more}`, topic, story: { emoji: '🪓', title: 'Gimli and Legolas' }, answer: 2 * g + more,
+      prompt: `Gimli and Legolas have a contest. Gimli counts ${g} orcs. Legolas counts ${more} more orcs than Gimli. How many orcs do they count together?`,
+      hints: [`Legolas counts ${g} + ${more}.`, 'Now add what both of them counted.'],
+      explanation: `Legolas counted ${g} + ${more} = ${g + more}. Together: ${g} + ${g + more} = ${2 * g + more}.` });
   }
   if (topic === 'measure' && mode === 'story') {
     const unit = d === 'challenge' ? 'centimeters' : 'inches';
@@ -241,6 +251,12 @@ export function themed12(mode, topic, d) {
 function themed12raw(mode, topic, d) {
   const by = (e, s, c) => (d === 'easy' ? e : d === 'challenge' ? c : s);
   if (topic === 'rates') {
+    if (d === 'challenge' && chance(0.6)) {
+      const r1 = rand(24, 48); const r2 = rand(30, 56); const t1 = pick([1.5, 2.5, 3.5]); const t2 = pick([2, 2.5, 3]); const tot = r1 * t1 + r2 * t2;
+      return typed({ key: `me:rates:ride2:${r1}:${r2}:${t1}:${t2}`, topic, story: { emoji: '🐎', title: 'Shadowfax' }, answer: String(tot),
+        prompt: `Gandalf rides Shadowfax at ${r1} miles per hour for ${t1} hours, then at ${r2} miles per hour for ${t2} hours. How many miles does he ride in all?`,
+        hints: [`First part: ${r1} × ${t1} = ${r1 * t1}.`, `Second part: ${r2} × ${t2} = ${r2 * t2}.`, 'Add them.'], explanation: `${r1 * t1} + ${r2 * t2} = ${tot} miles.` });
+    }
     const f = pick(['ride', 'days']);
     if (f === 'ride') {
       const r = rand(30, 55); const t = pick([1.5, 2, 2.5, 3, 3.5]);
@@ -252,7 +268,7 @@ function themed12raw(mode, topic, d) {
       prompt: `The hobbits walk ${per} miles a day. The road to Rivendell is ${per * days} miles. How many days will it take?`, hints: ['time = distance ÷ rate'], explanation: `${per * days} ÷ ${per} = ${days} days.` });
   }
   if (topic === 'probability') {
-    const f = pick(by(['one', 'not'], ['one', 'not', 'two'], ['two', 'two', 'one']));
+    const f = pick(by(['one'], ['not', 'not', 'one'], ['two', 'two', 'one']));
     if (f === 'two') {
       return typed({ key: 'me:prob:twohobbits', topic, story: { emoji: '💍', title: 'The Fellowship' }, answer: '1/6',
         prompt: 'The Fellowship has 9 members: 4 hobbits, 2 men, 1 elf, 1 dwarf and 1 wizard. Two different members are picked at random to keep watch. What is P(both are hobbits)? (The chance that both are hobbits.)',
@@ -264,14 +280,14 @@ function themed12raw(mode, topic, d) {
       prompt: `The Fellowship has 9 members: 4 hobbits, 2 men, 1 elf, 1 dwarf and 1 wizard. One is chosen at random. What is the probability that the one chosen is ${not ? 'NOT ' : ''}${what}? (Written P(${not ? 'NOT ' : ''}${what}).)`,
       hint: 'Answer as a fraction', explanation: `${not ? 9 - k : k} of the 9 members: ${FR(not ? 9 - k : k, 9)}.` });
   }
-  if (topic === 'algebra' && mode === 'story') {
+  if (topic === 'algebra' && mode === 'story' && d !== 'easy') {
     const g = by(rand(3, 12), rand(5, 20), rand(10, 40)); const k = by(2, pick([2, 3]), pick([3, 4, 5])); const extra = by(rand(1, 4), rand(1, 8), rand(6, 18));
     const l = k * g + extra;
     return typed({ key: `me:alg:${g}:${k}:${extra}`, topic, story: { emoji: '🏹', title: 'The Orc Contest' }, answer: g,
       prompt: `At Helm's Deep, Legolas counts ${extra} more than ${({ 2: 'twice', 3: 'three times', 4: 'four times', 5: 'five times' })[k]} as many orcs as Gimli. Together they count ${g + l}. How many did Gimli count?`,
       hints: [`Let g = Gimli's count. Legolas = ${k}g + ${extra}.`, `g + ${k}g + ${extra} = ${g + l}.`], explanation: `${k + 1}g + ${extra} = ${g + l}, so ${k + 1}g = ${g + l - extra} and g = ${g}.` });
   }
-  if (topic === 'ratio' && (mode === 'story' || mode === 'stem')) {
+  if (topic === 'ratio' && d !== 'easy' && (mode === 'story' || mode === 'stem')) {
     const e = rand(2, 5); const m = rand(e + 1, 8); const unit = rand(by(10, 20, 30), by(25, 60, 120));
     const total = (e + m) * unit; const askE = chance(0.5);
     return typed({ key: `me:ratio:${e}:${m}:${unit}:${askE}`, topic, story: { emoji: '🛡️', title: "Helm's Deep" }, answer: (askE ? e : m) * unit,
@@ -312,7 +328,7 @@ function themed12raw(mode, topic, d) {
         hints: [`One hobbit: ${meals} × ${days} = ${meals * days}.`, `Four hobbits: × ${hobbits}.`], explanation: `${meals} × ${days} × ${hobbits} = ${meals * days * hobbits}.` });
     }
     if (topic === 'div') {
-      const per = pick([8, 12, 15, 24]); const n = rand(by(6, 15, 30), by(12, 40, 90));
+      const per = pick(by([6, 8, 12], [8, 12, 15, 24], [12, 15, 24])); const n = rand(by(6, 15, 30), by(12, 40, 90));
       return typed({ key: `me:div:${per}:${n}`, topic, story: { emoji: '🍞', title: 'Lembas Bread' }, answer: n,
         prompt: `The elves of Lórien baked ${per * n} lembas wafers and wrapped them in leaves, ${per} to a bundle. How many bundles?`, hints: [`Divide ${per * n} by ${per}.`], explanation: `${per * n} ÷ ${per} = ${n}.` });
     }
@@ -321,7 +337,9 @@ function themed12raw(mode, topic, d) {
       return typed({ key: `me:add12:${a}:${b}`, topic, story: { emoji: '🗺️', title: 'Across Middle-earth' }, answer: a + b,
         prompt: `Frodo and Sam travel ${a} miles from the Shire to Rivendell, then ${b} miles more toward Mordor. How far have they gone?`, hints: [`Add ${a} + ${b}.`], explanation: `${a} + ${b} = ${a + b} miles.` });
     }
-    const [big, sm] = a > b ? [a, b] : [b + a, b];
+    const [big, sm0] = a > b ? [a, b] : [b + a, b];
+    let sm = sm0;
+    if (d !== 'easy' && big % 10 < 9) { sm = sm - (sm % 10) + rand((big % 10) + 1, 9); if (sm >= big) sm -= 10; } // the ones digit forces a regroup
     return typed({ key: `me:sub12:${big}:${sm}`, topic, story: { emoji: '🌋', title: 'Mount Doom' }, answer: big - sm,
       prompt: `The journey to Mount Doom is ${big} miles. Frodo and Sam have gone ${sm} miles. How many miles are left?`, hints: [`Subtract ${big} − ${sm}.`], explanation: `${big} − ${sm} = ${big - sm} miles.` });
   }
@@ -365,8 +383,7 @@ export function themed4(mode, topic, d) {
   if (topic === 'compare') return themed3(mode, topic, d);
   if (topic === 'patterns') return themed3(mode, topic, d);
   if (topic === 'measure') {
-    if (d === 'stretch') return themed5(mode, topic, 'stretch');
-    return whoTaller(topic, mode, d === 'ready' ? 3 : 2);
+    return whoTaller(topic, mode, d === 'stretch' ? 4 : d === 'ready' ? 3 : 2);
   }
   if (topic === 'count20') {
     const [lo, hi] = by([6, 10], [11, 15], [16, 20]);
@@ -379,26 +396,36 @@ export function themed4(mode, topic, d) {
     });
   }
   if (topic === 'sorting' && d !== 'gentle') return themed5(mode, topic, d);
-  if (topic === 'skip' && d === 'stretch') return themed5(mode, topic, 'ready');
+  if (topic === 'skip' && d === 'stretch') {
+    const n = rand(2, 5);
+    return small({ key: `me:skip:feet4:${n}`, topic, prompt: 'Hobbits have big hairy feet! Count by 2s. How many feet?', visual: { type: 'crowd', ids: hobbitCrowd(n) },
+      answer: n * 2, speak: 'Hobbits have big hairy feet. Count by twos. How many feet are there?', hints: ['Each hobbit has 2 feet.', 'Count 2, 4, 6, 8…'],
+      summary: `${n} hobbits' feet`, explanation: `${n} hobbits with 2 feet each: ${Array.from({ length: n }, (_, i) => 2 * (i + 1)).join(', ')}. That's ${n * 2} feet.` });
+  }
   return null;
 }
 
 /* ------------------------------------ Age 6 ------------------------------------ */
 export const themed6 = (mode, topic, d) => withSpeak(themed6raw(mode, topic, d), toSpeech);
 function themed6raw(mode, topic, d) {
-  if ((topic === 'add' || topic === 'sub') && mode === 'story') return d === 'stretch' ? themed7(mode, topic, 'easy') : themed5(mode, topic, d === 'gentle' ? 'ready' : 'stretch');
+  if ((topic === 'add' || topic === 'sub') && mode === 'story') {
+    if (d === 'stretch') return themed7(mode, topic, 'easy');
+    let q = themed5(mode, topic, d === 'gentle' ? 'ready' : 'stretch');
+    if (topic === 'add' && d === 'ready') for (let i = 0; i < 12 && Number(q.answer) < 11; i++) q = themed5(mode, topic, 'stretch'); // Advanced: sums past 10
+    return q;
+  }
   if (topic === 'compare' && mode === 'story') return themed5(mode, topic, d);
-  if (topic === 'measure') return d === 'gentle' ? whoTaller(topic, mode, 3) : d === 'ready' ? blocksDiff(topic, mode, 7, 12) : blocksDiff(topic, mode, 14, 24);
+  if (topic === 'measure') return d === 'gentle' ? blocksDiff(topic, mode, 4, 8) : d === 'ready' ? blocksDiff(topic, mode, 7, 12) : blocksDiff(topic, mode, 14, 24);
   if (topic === 'skip') return themed5(mode, topic, d);
-  if (topic === 'money' && mode === 'story') return themed7(mode, topic, d === 'gentle' ? 'easy' : d === 'ready' ? 'standard' : 'challenge');
-  if (topic === 'time' && mode !== 'flash') return bilboParty(topic, d === 'gentle' ? [60, 120] : d === 'ready' ? [30, 60, 90] : [45, 75, 105], d === 'stretch' ? 15 : 30);
+  if (topic === 'money' && mode === 'story') return d === 'gentle' ? null : themed7(mode, topic, d === 'ready' ? 'easy' : 'standard');
+  if (topic === 'time' && mode !== 'flash') return d === 'gentle' ? null : bilboParty(topic, d === 'ready' ? [30, 60, 90] : [45, 75, 90], d === 'stretch' ? 15 : 30);
   if (topic === 'graphs') {
     const n = d === 'gentle' ? 3 : 4; const each = d === 'stretch' ? 2 : 1;
     const vals = sample([1, 2, 3, 4, 5, 6, 7], n).map((v) => v * each);
     const rows = HOBBITS.slice(0, n).map((id, i) => ({ label: nameOf(id), value: vals[i] }));
     const [A, B] = sample(rows, 2); const [hi, lo] = A.value > B.value ? [A, B] : [B, A];
     const visual = { type: 'picgraph', rows, emoji: '🍄', each, title: 'Mushrooms the Hobbits Found' };
-    if (d === 'gentle' || chance(0.4)) {
+    if (d === 'gentle' || (d === 'stretch' && chance(0.4))) {
       return typed({ key: `me:graphs:${vals.join(',')}:read:${A.label}`, topic, prompt: `How many mushrooms did ${A.label} find?`, visual, answer: A.value,
         hints: [each > 1 ? 'Each mushroom means 2!' : 'Count the mushrooms in the row.'], explanation: `${A.label} found ${A.value}.` });
     }
