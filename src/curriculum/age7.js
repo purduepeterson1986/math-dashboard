@@ -100,7 +100,8 @@ export function placevalue(mode, d) {
   }
   if (f === 'value') {
     const s = String(n); const i = rand(0, s.length - 1); const digit = Number(s[i]);
-    if (digit === 0) return placevalue(mode, d);
+    // the digit must appear only once, or "the value of the 8 in 4,882" has two answers
+    if (digit === 0 || s.split(String(digit)).length > 2) return placevalue(mode, d);
     const place = s.length - 1 - i; const val = digit * 10 ** place;
     return kp({ key: `pv:value:${n}:${i}`, topic, prompt: `What is the VALUE of the ${digit} in ${fmt(n)}?`, display: fmt(n), answer: val,
       hints: [`The ${digit} is in the ${PLACE[place]} place.`], explanation: `The ${digit} is in the ${PLACE[place]} place, so it is worth ${fmt(val)}.` });

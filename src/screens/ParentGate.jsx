@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Lock, ArrowLeft, Delete } from 'lucide-react';
 import MathKeypad from '../components/MathKeypad.jsx';
 import AnswerDisplay from '../components/AnswerDisplay.jsx';
@@ -12,14 +12,32 @@ export default function ParentGate({ pin, onPass, onCancel }) {
   const [wrong, setWrong] = useState(false);
   const problem = useMemo(() => { const a = rand(13, 29); const b = rand(4, 9); const c = rand(11, 49); return { a, b, c, ans: a * b + c }; }, [useMath]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fail = () => { sfx.wrong(); setWrong(true); setTimeout(() => { setWrong(false); setEntry(''); }, 600); };
+  const fail = () => { sfx.wrong(); setWrong(true); setTimeout(() => { setWrong(false); put(''); }, 600); };
+  const entryRef = useRef('');
+  const put = (v) => { entryRef.current = v; setEntry(v); };
   const pressPin = (d) => {
     if (wrong) return;
     sfx.tap();
-    const next = (entry + d).slice(0, 4);
-    setEntry(next);
+    const next = (entryRef.current + d).slice(0, 4);
+    put(next);
     if (next.length === 4) { if (next === pin) onPass(); else fail(); }
   };
+
+  // Hardware keyboard (iPad keyboard / Mac): digits, Backspace and Enter work on the PIN screen too.
+  const kb = useRef();
+  kb.current = { wrong, pressPin, fail };
+  useEffect(() => {
+    if (useMath) return undefined;
+    const onKey = (e) => {
+      const { wrong: w, pressPin: press, fail: bad } = kb.current;
+      const en = entryRef.current;
+      if (/^\d$/.test(e.key)) { e.preventDefault(); press(e.key); }
+      else if (e.key === 'Backspace') { e.preventDefault(); put(entryRef.current.slice(0, -1)); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (w) return; if (en === pin) onPass(); else bad(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [useMath, pin, onPass]);
 
   return (
     <div className="min-h-[100dvh] bg-canvas safe-top flex items-center justify-center p-4">
@@ -49,12 +67,12 @@ export default function ParentGate({ pin, onPass, onCancel }) {
               ))}
               <span />
               <button type="button" onPointerDown={(e) => { e.preventDefault(); pressPin('0'); }} className="press key-shadow h-16 rounded-2xl bg-slate-50 text-2xl font-bold">0</button>
-              <button type="button" aria-label="Delete" onClick={() => setEntry((e) => e.slice(0, -1))} className="press h-16 rounded-2xl bg-slate-100 flex items-center justify-center"><Delete /></button>
+              <button type="button" aria-label="Delete" onClick={() => put(entryRef.current.slice(0, -1))} className="press h-16 rounded-2xl bg-slate-100 flex items-center justify-center"><Delete /></button>
             </div>
           </div>
         )}
         {pin && (
-          <button type="button" onClick={() => { setUseMath((m) => !m); setEntry(''); }} className="mt-4 w-full min-h-12 text-sm font-bold text-brand-600">
+          <button type="button" onClick={() => { setUseMath((m) => !m); put(''); }} className="mt-4 w-full min-h-12 text-sm font-bold text-brand-600">
             {useMath ? 'Use PIN instead' : 'Forgot PIN? Answer a math question instead'}
           </button>
         )}

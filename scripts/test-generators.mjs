@@ -27,6 +27,7 @@ for (const [age, cur] of Object.entries(CURRICULA)) {
           if (BAD.test(text)) fail(`bad text ${age}/${topic.id}/${mode}/${diff}`, q);
           if (!q.prompt && !q.display) fail('no prompt', q);
           if (q.answerLabel === undefined || q.answerLabel === null || q.answerLabel === '') fail(`no answer label ${age}/${topic.id}`, q);
+          { const m = /value of the (\d) in ([\d,]+)/i.exec(q.prompt || ''); if (m && m[2].replace(/,/g, '').split(m[1]).length > 2) fail(`ambiguous digit ${age}/${topic.id}`, q); }
           if (q.input === 'choice') {
             if (!q.choices || q.choices.length < 2) fail('few choices', q);
             if (!q.choices.some((c) => c.id === q.answer)) fail('answer not in choices', q);
