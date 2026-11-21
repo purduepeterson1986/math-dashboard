@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import ModeIcon from '../components/ModeIcon.jsx';
 import Modal from '../components/Modal.jsx';
+import Summary from './Summary.jsx';
 import { MathText } from '../components/Visual.jsx';
 import { CURRICULA, MODES, AGE_META, getCurriculum, modeById } from '../curriculum/index.js';
 import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats } from '../lib/diagnostics.js';
@@ -56,7 +57,7 @@ function StatusBadge({ status }) {
 }
 
 /* ------------------------------ Trend chart ------------------------------ */
-function AccuracyTrend({ sessions }) {
+function AccuracyTrend({ sessions, onOpen }) {
   const [sel, setSel] = useState(null);
   const data = [...sessions].sort((a, b) => a.startedAt - b.startedAt).slice(-20);
   if (!data.length) return <p className="text-ink-muted font-semibold">No sessions yet.</p>;
@@ -73,7 +74,7 @@ function AccuracyTrend({ sessions }) {
         <div className="absolute left-9 right-0 top-0 flex items-end gap-[2px]" style={{ height: H }} onPointerLeave={() => setSel(null)}>
           {data.map((s, i) => (
             <button key={s.id} type="button" aria-label={`${fmtDate(s.startedAt)} ${modeById(s.mode)?.label}: ${pct(s.accuracy)}`}
-              onPointerEnter={() => setSel(i)} onClick={() => setSel(i)}
+              onPointerEnter={() => setSel(i)} onClick={() => onOpen?.(s)}
               className="relative flex-1 h-full flex items-end justify-center group">
               <span className={`w-full max-w-[28px] rounded-t-[4px] transition-colors ${sel === i ? 'bg-brand-700' : 'bg-brand-500'}`} style={{ height: `${Math.max(2, s.accuracy * 100)}%` }} />
             </button>
@@ -94,7 +95,7 @@ function AccuracyTrend({ sessions }) {
 }
 
 /* ------------------------------ Overview ------------------------------ */
-function Overview({ sessions, ageFilter, onLaunch }) {
+function Overview({ sessions, ageFilter, onLaunch, onOpen }) {
   const list = ageFilter === 'all' ? sessions : sessions.filter((s) => s.age === ageFilter);
   const qs = list.reduce((a, s) => a + s.total, 0);
   const correct = list.reduce((a, s) => a + s.score, 0);
@@ -119,8 +120,8 @@ function Overview({ sessions, ageFilter, onLaunch }) {
       </div>
 
       <div className="grid lg:grid-cols-5 gap-4">
-        <Card title="Accuracy by session" className="lg:col-span-3" right={<span className="text-xs font-bold text-ink-muted">last 20 · tap a bar</span>}>
-          <AccuracyTrend sessions={list} />
+        <Card title="Accuracy by session" className="lg:col-span-3" right={<span className="text-xs font-bold text-ink-muted">last 20 · tap a bar to review</span>}>
+          <AccuracyTrend sessions={list} onOpen={onOpen} />
         </Card>
         <Card title="By learning mode" className="lg:col-span-2">
           <ul className="space-y-3">
@@ -232,7 +233,7 @@ function Mastery({ sessions, age, onLaunch }) {
 }
 
 /* ------------------------------ History ------------------------------ */
-function HistoryTab({ sessions, ageFilter, onDelete }) {
+function HistoryTab({ sessions, ageFilter, onDelete, onOpen }) {
   const [modeF, setModeF] = useState('all');
   const [open, setOpen] = useState(null);
   const [del, setDel] = useState(null);
@@ -279,7 +280,8 @@ function HistoryTab({ sessions, ageFilter, onDelete }) {
                         </li>
                       ))}
                     </ul>
-                    <button type="button" onClick={() => setDel(s)} className="press mt-3 min-h-11 px-4 rounded-xl bg-bad-soft text-bad font-extrabold flex items-center gap-2"><Trash2 size={16} /> Delete session</button>
+                    <button type="button" onClick={() => onOpen(s)} className="press mt-3 mr-2 min-h-11 px-4 rounded-xl bg-brand-600 text-white font-extrabold inline-flex items-center gap-2">Full review</button>
+                    <button type="button" onClick={() => setDel(s)} className="press mt-3 min-h-11 px-4 rounded-xl bg-bad-soft text-bad font-extrabold inline-flex items-center gap-2"><Trash2 size={16} /> Delete session</button>
                   </div>
                 )}
               </li>
@@ -313,7 +315,7 @@ function SettingsTab({ settings, sessions, onSettings, onSessions }) {
       <Card title="Student" icon={<User size={20} className="text-brand-600" />}>
         <label className="block text-sm font-extrabold text-ink-soft mb-1" htmlFor="sname">Name shown on the home screen</label>
         <input id="sname" value={settings.studentName} maxLength={24} onChange={(e) => onSettings({ studentName: e.target.value })}
-          className="w-full h-14 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" placeholder="e.g. Maya" />
+          className="w-full h-14 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" placeholder="e.g. Mary" />
         <div className="mt-4 divide-y divide-line">
           <Toggle on={settings.sound} onClick={() => onSettings({ sound: !settings.sound })} icon={<Volume2 size={20} />} label="Sound effects" desc="Taps, correct/incorrect chimes, celebrations" />
           <Toggle on={settings.voice} onClick={() => onSettings({ voice: !settings.voice })} icon={<Mic size={20} />} label="Read aloud (Ages 3–6)" desc="Speaks each question for pre-readers" />
@@ -362,6 +364,10 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
   const [ageFilter, setAgeFilter] = useState('all');
   const [masteryAge, setMasteryAge] = useState(settings.age in CURRICULA ? settings.age : Number(Object.keys(CURRICULA)[0]));
   const launch = (age, mode, topics) => onLaunch(age, mode, topics);
+  const [review, setReview] = useState(null);
+  if (review) {
+    return <Summary readOnly session={review} curriculum={getCurriculum(review.age)} onHome={() => setReview(null)} onTarget={(topics) => launch(review.age, review.mode, topics)} />;
+  }
 
   return (
     <div className="min-h-[100dvh] bg-canvas safe-top safe-bottom">
@@ -395,9 +401,9 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
           </div>
         )}
 
-        {tab === 'overview' && <Overview sessions={sessions} ageFilter={ageFilter} onLaunch={launch} />}
+        {tab === 'overview' && <Overview sessions={sessions} ageFilter={ageFilter} onLaunch={launch} onOpen={setReview} />}
         {tab === 'mastery' && <Mastery sessions={sessions} age={masteryAge} onLaunch={launch} />}
-        {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} />}
+        {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onOpen={setReview} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} />}
         {tab === 'settings' && <SettingsTab settings={settings} sessions={sessions} onSettings={onSettings} onSessions={onSessions} />}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { shuffle } from '../lib/rng.js';
 
-export const NAMES = ['Ava', 'Liam', 'Maya', 'Noah', 'Zoe', 'Eli', 'Priya', 'Mateo', 'Leah', 'Omar', 'Ruby', 'Kai', 'Nora', 'Theo', 'Isla', 'Jonah', 'Amara', 'Felix'];
+export const NAMES = ['Mary', 'Karen', 'Lisa', 'Julie', 'Ben', 'Tom', 'Pete', 'Bob', 'Anne', 'Sue', 'Jane', 'Beth', 'Kate', 'Amy', 'Nancy', 'Linda', 'Carol', 'Ruth', 'Jill', 'Joan', 'Meg', 'Liz', 'Dan', 'Jim', 'Joe', 'Max', 'Ned', 'Tim', 'Dave', 'Mike', 'Nick', 'Paul', 'Mark', 'John', 'Jack', 'Luke', 'Matt', 'Steve', 'Greg', 'Ken', 'Rob', 'Ted', 'Al', 'Hank', 'Frank', 'Henry'];
 
 export const COLORS = {
   red: '#ef4444', blue: '#3b82f6', yellow: '#f5b70a', green: '#22c55e',

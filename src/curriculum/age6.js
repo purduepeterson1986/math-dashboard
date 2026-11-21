@@ -17,10 +17,10 @@ const lvl = (d) => (d === 'gentle' || d === 'stretch' ? d : 'ready');
 
 /* ---------------------------- picture graphs ---------------------------- */
 const GRAPH_SETS = [
-  { title: 'Fruit We Picked', emoji: '🍎', rows: ['Ava', 'Liam', 'Maya', 'Noah'] },
-  { title: 'Books We Read', emoji: '📕', rows: ['Zoe', 'Eli', 'Priya', 'Omar'] },
+  { title: 'Fruit We Picked', emoji: '🍎', rows: ['Mary', 'Tom', 'Julie', 'Bob'] },
+  { title: 'Books We Read', emoji: '📕', rows: ['Lisa', 'Ben', 'Karen', 'Pete'] },
   { title: 'Birds We Saw', emoji: '🐦', rows: ['Mon', 'Tue', 'Wed', 'Thu'] },
-  { title: 'Shells We Found', emoji: '🐚', rows: ['Ruby', 'Kai', 'Nora', 'Theo'] },
+  { title: 'Shells We Found', emoji: '🐚', rows: ['Sue', 'Jim', 'Beth', 'Dan'] },
 ];
 function graphs(mode, d) {
   const topic = 'graphs';

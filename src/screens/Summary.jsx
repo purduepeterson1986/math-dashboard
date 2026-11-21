@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Star, Target, Clock3, Gauge, Flame, ThumbsUp, Wrench, RotateCcw, Home as HomeIcon, Crosshair, ChevronDown, Check, X, Lightbulb } from 'lucide-react';
+import { Star, Target, Clock3, Gauge, Flame, ThumbsUp, Wrench, RotateCcw, Home as HomeIcon, Crosshair, ChevronDown, Check, X, Lightbulb, ArrowLeft } from 'lucide-react';
 import Confetti from '../components/Confetti.jsx';
 import ModeIcon from '../components/ModeIcon.jsx';
 import { MathText } from '../components/Visual.jsx';
@@ -16,8 +16,9 @@ function Tile({ icon, label, value, sub }) {
   );
 }
 
-export default function Summary({ session, curriculum, onAgain, onHome, onTarget }) {
-  const [showAll, setShowAll] = useState(false);
+export default function Summary({ session, curriculum, onAgain, onHome, onTarget, readOnly = false }) {
+  const [showAll, setShowAll] = useState(readOnly);
+  const [missedOnly, setMissedOnly] = useState(false);
   const a = useMemo(() => analyzeSession(session, curriculum), [session, curriculum]);
   const acc = Math.round(session.accuracy * 100);
   const avg = session.total ? session.durationMs / session.total : 0;
@@ -27,11 +28,11 @@ export default function Summary({ session, curriculum, onAgain, onHome, onTarget
 
   return (
     <div className="min-h-[100dvh] bg-canvas safe-top safe-bottom">
-      {acc >= 75 && <Confetti />}
+      {acc >= 75 && !readOnly && <Confetti />}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         <div className="rounded-[32px] bg-gradient-to-br from-brand-600 to-brand-500 text-white p-6 sm:p-8 shadow-xl shadow-brand-600/25 animate-pop">
           <div className="flex items-center gap-3 text-white/80 font-bold">
-            <ModeIcon mode={session.mode} box="w-10 h-10" size={20} /> {mode?.label} · Age {session.age}{session.targeted ? ' · Targeted practice' : ''}
+            <ModeIcon mode={session.mode} box="w-10 h-10" size={20} /> {mode?.label} · Age {session.age}{session.targeted ? ' · Targeted practice' : ''}{readOnly ? ` · ${new Date(session.startedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}` : ''}
           </div>
           <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
             <div>
@@ -80,11 +81,15 @@ export default function Summary({ session, curriculum, onAgain, onHome, onTarget
         )}
 
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={onAgain} className="press flex-1 min-w-[180px] h-16 rounded-2xl bg-brand-600 text-white text-lg font-black flex items-center justify-center gap-2"><RotateCcw size={22} /> Play again</button>
+          {readOnly ? (
+            <button type="button" onClick={onHome} className="press flex-1 min-w-[180px] h-16 rounded-2xl bg-brand-600 text-white text-lg font-black flex items-center justify-center gap-2"><ArrowLeft size={22} /> Back to Parent Portal</button>
+          ) : (
+            <button type="button" onClick={onAgain} className="press flex-1 min-w-[180px] h-16 rounded-2xl bg-brand-600 text-white text-lg font-black flex items-center justify-center gap-2"><RotateCcw size={22} /> Play again</button>
+          )}
           {a.needsWork.length > 0 && (
             <button type="button" onClick={() => onTarget(a.needsWork.map((w) => w.topic))} className="press flex-1 min-w-[180px] h-16 rounded-2xl bg-white border-2 border-brand-200 text-brand-700 text-lg font-black flex items-center justify-center gap-2"><Crosshair size={22} /> Practice weak spots</button>
           )}
-          <button type="button" onClick={onHome} className="press flex-1 min-w-[180px] h-16 rounded-2xl bg-white border-2 border-line text-ink text-lg font-black flex items-center justify-center gap-2"><HomeIcon size={22} /> Home</button>
+          {!readOnly && <button type="button" onClick={onHome} className="press flex-1 min-w-[180px] h-16 rounded-2xl bg-white border-2 border-line text-ink text-lg font-black flex items-center justify-center gap-2"><HomeIcon size={22} /> Home</button>}
         </div>
 
         <div className="rounded-3xl bg-white border border-line card-shadow overflow-hidden">
@@ -92,21 +97,31 @@ export default function Summary({ session, curriculum, onAgain, onHome, onTarget
             Question-by-question review <ChevronDown className={`transition-transform ${showAll ? 'rotate-180' : ''}`} />
           </button>
           {showAll && (
-            <ul className="divide-y divide-line border-t border-line">
-              {session.questions.map((q, i) => (
-                <li key={i} className="px-5 py-3 flex items-center gap-3">
-                  <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${q.correct ? 'bg-good text-white' : 'bg-bad text-white'}`}>{q.correct ? <Check size={18} strokeWidth={3} /> : <X size={18} strokeWidth={3} />}</span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block font-bold text-ink truncate"><MathText text={q.prompt} /></span>
-                    <span className="block text-xs font-bold text-ink-muted">{label(q.topic)}{q.hints ? ` · ${q.hints} hint${q.hints > 1 ? 's' : ''}` : ''}{q.retried ? ' · 2nd try' : ''}</span>
-                  </span>
-                  <span className="text-right text-sm font-bold tabular">
-                    {!q.correct && <span className="block text-good">Ans: <MathText text={q.answer} /></span>}
-                    <span className="block text-ink-muted">{(q.ms / 1000).toFixed(1)}s</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="border-t border-line">
+              <div className="px-5 py-3 flex gap-2">
+                <button type="button" onClick={() => setMissedOnly(false)} className={`press min-h-11 px-4 rounded-full font-extrabold text-sm border-2 ${!missedOnly ? 'bg-ink text-white border-ink' : 'bg-white border-line text-ink-soft'}`}>All ({session.questions.length})</button>
+                <button type="button" onClick={() => setMissedOnly(true)} className={`press min-h-11 px-4 rounded-full font-extrabold text-sm border-2 ${missedOnly ? 'bg-ink text-white border-ink' : 'bg-white border-line text-ink-soft'}`}>Missed ({session.questions.filter((q) => !q.correct).length})</button>
+              </div>
+              <ul className="divide-y divide-line border-t border-line">
+                {session.questions.map((q, i) => ({ q, i })).filter(({ q }) => !missedOnly || !q.correct).map(({ q, i }) => (
+                  <li key={i} className="px-5 py-3 flex items-start gap-3">
+                    <span className={`shrink-0 mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center ${q.correct ? 'bg-good text-white' : 'bg-bad text-white'}`}>{q.correct ? <Check size={18} strokeWidth={3} /> : <X size={18} strokeWidth={3} />}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block font-bold text-ink"><span className="text-ink-muted tabular">{i + 1}. </span><MathText text={q.prompt} /></span>
+                      <span className="block text-xs font-bold text-ink-muted">{label(q.topic)}{q.hints ? ` · ${q.hints} hint${q.hints > 1 ? 's' : ''}` : ''}{q.retried ? ' · 2nd try' : ''}{q.skipped ? ' · skipped' : ''}</span>
+                      {!q.correct && (
+                        <span className="block mt-1 text-sm font-bold">
+                          <span className="block text-bad">{q.skipped ? 'No answer' : `Answered: ${q.givenText ?? q.given ?? '—'}`}</span>
+                          <span className="block text-good">Correct: <MathText text={q.answer} /></span>
+                          {q.why && <span className="block font-semibold text-ink-soft mt-0.5"><MathText text={q.why} /></span>}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-sm font-bold tabular text-ink-muted">{(q.ms / 1000).toFixed(1)}s</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>

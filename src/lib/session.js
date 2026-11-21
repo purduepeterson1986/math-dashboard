@@ -1,3 +1,4 @@
+import { givenLabel } from './answer.js';
 import { shuffle, pick, uid } from './rng.js';
 
 const MAX_TRIES = 60;
@@ -69,6 +70,8 @@ export function makeRecord(q, given, correct, ms, extra = {}) {
     prompt: q.summary || q.display || q.prompt,
     answer: q.answerLabel ?? String(q.answer),
     given,
+    givenText: givenLabel(given, q),
+    why: q.explanation || '',
     correct,
     ms: Math.round(ms),
     ...extra,
