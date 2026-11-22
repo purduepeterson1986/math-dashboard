@@ -16,7 +16,7 @@ import {
   mergeSessions, exportFamily, readBackup, IDLE_MS, displayName,
 } from './lib/profiles.js';
 import { setSoundEnabled, setVoiceEnabled, unlockAudio, audioReady, stopSpeaking } from './lib/audio.js';
-import { starsFor, practiceStreakDays } from './lib/diagnostics.js';
+import { starsFor } from './lib/diagnostics.js';
 import { topicsForMode } from './lib/session.js';
 import { uid } from './lib/rng.js';
 import { setMiddleEarth } from './curriculum/middleEarth.js';
@@ -93,10 +93,9 @@ export default function App() {
     if (studentName !== undefined) mine.name = studentName;
     if (Object.keys(mine).length && activeId) updateProfile(activeId, mine);
   }, [activeId, updateProfile]);
+  const todayCount = useMemo(() => { const d = new Date().toDateString(); return sessions.filter((s) => new Date(s.startedAt).toDateString() === d).length; }, [sessions]);
   const age = tryAge ?? settings.age;
   const curriculum = getCurriculum(age);
-  const totalStars = useMemo(() => sessions.reduce((a, s) => a + (s.stars || 0), 0), [sessions]);
-  const dayStreak = useMemo(() => practiceStreakDays(sessions), [sessions]);
 
   const startSession = (sessionAge, mode, config, opts = {}) => {
     setSetupMode(null);
@@ -194,7 +193,7 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] pb-8">
-      <Header name={settings.studentName} child={multi ? { name: displayName(active, activeIndex), avatar: active.avatar } : null} onSwitch={switchChild} stars={totalStars} dayStreak={dayStreak} sound={settings.sound}
+      <Header name={settings.studentName} child={multi ? { name: displayName(active, activeIndex), avatar: active.avatar } : null} onSwitch={switchChild} today={todayCount} sound={settings.sound}
         onToggleSound={() => patchSettings({ sound: !settings.sound })} onParent={() => setView({ name: 'gate' })} />
       <Home age={age} onAge={setTryAge} sessions={sessions}
         onPickMode={(m) => setSetupMode(m)} onQuickStart={(m, topics) => launchTargeted(age, m, topics)} />

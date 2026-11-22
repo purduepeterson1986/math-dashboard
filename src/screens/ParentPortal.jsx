@@ -157,11 +157,11 @@ function Overview({ sessions, ageFilter, onLaunch, onOpen }) {
             {!mine.length ? <p className="text-ink-muted font-semibold">No sessions at this age yet.</p> : (
               <div className="space-y-3">
                 <ul className="space-y-2 text-ink font-semibold">
-                  {strong.length > 0 && <li className="flex gap-2"><CheckCircle2 size={20} className="text-good shrink-0" />Strong in {strong.map((m) => m.label).join(', ')}. Consider moving up a level in these.</li>}
+                  {strong.length > 0 && <li className="flex gap-2"><CheckCircle2 size={20} className="text-good shrink-0" />Strong in {strong.map((m) => m.label).join(', ')}.</li>}
                   {weak.length > 0 && <li className="flex gap-2"><AlertCircle size={20} className="text-bad shrink-0" />Needs practice: {weak.map((id) => mastery.find((m) => m.topic === id).label).join(', ')}.</li>}
                   {slow.length > 0 && <li className="flex gap-2"><TrendingUp size={20} className="text-warn shrink-0" />Accurate but slow lately in {slow.map((id) => cur.topics.find((t) => t.id === id)?.label).join(', ')}. Short Flash Card drills build fluency.</li>}
                   {mastery.filter((m) => m.status === 'new').length > 0 && <li className="flex gap-2"><Circle size={20} className="text-ink-muted shrink-0" />Not tried yet: {mastery.filter((m) => m.status === 'new').map((m) => m.label).join(', ')}.</li>}
-                  {!weak.length && !slow.length && <li className="flex gap-2"><CheckCircle2 size={20} className="text-good shrink-0" />No weak spots detected. Try the next difficulty level.</li>}
+                  {!weak.length && !slow.length && <li className="flex gap-2"><CheckCircle2 size={20} className="text-good shrink-0" />No weak spots detected.</li>}
                 </ul>
                 {weak.length > 0 && <TargetButtons age={age} topics={weak} onLaunch={onLaunch} />}
               </div>
@@ -302,13 +302,21 @@ function Mastery({ sessions, age, onLaunch }) {
 }
 
 /* ------------------------------ History ------------------------------ */
-function HistoryTab({ sessions, ageFilter, onDelete, onOpen }) {
+function HistoryTab({ sessions, ageFilter, onDelete, onClearAll, childName, onOpen }) {
   const [modeF, setModeF] = useState('all');
   const [open, setOpen] = useState(null);
   const [del, setDel] = useState(null);
+  const [clearAll, setClearAll] = useState(false);
   const list = sessions.filter((s) => (ageFilter === 'all' || s.age === ageFilter) && (modeF === 'all' || s.mode === modeF));
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white border border-line card-shadow px-5 py-3">
+        <div>
+          <div className="font-black text-ink">{childName}’s history</div>
+          <div className="text-xs font-bold text-ink-muted">{sessions.length} session{sessions.length === 1 ? '' : 's'} saved. Wrong child or a session that went wrong? Delete just that one with its trash button, or delete everything here.</div>
+        </div>
+        <button type="button" disabled={!sessions.length} onClick={() => setClearAll(true)} className="press min-h-11 px-4 rounded-xl bg-bad-soft text-bad font-extrabold inline-flex items-center gap-2 disabled:opacity-40"><Trash2 size={16} /> Delete all</button>
+      </div>
       <div className="flex flex-wrap gap-2">
         <Chip on={modeF === 'all'} onClick={() => setModeF('all')}>All modes</Chip>
         {MODES.map((m) => <Chip key={m.id} on={modeF === m.id} onClick={() => setModeF(m.id)}>{m.label}</Chip>)}
@@ -324,8 +332,9 @@ function HistoryTab({ sessions, ageFilter, onDelete, onOpen }) {
             const isOpen = open === s.id;
             return (
               <li key={s.id}>
+                <div className="flex items-center">
                 <button type="button" onClick={() => setOpen(isOpen ? null : s.id)} aria-expanded={isOpen}
-                  className="w-full text-left px-5 py-3 grid grid-cols-2 md:grid-cols-[1.3fr_0.6fr_1.4fr_0.8fr_0.8fr_0.8fr_48px] gap-x-3 gap-y-1 items-center min-h-16">
+                  className="flex-1 min-w-0 text-left pl-5 pr-2 py-3 grid grid-cols-2 md:grid-cols-[1.3fr_0.6fr_1.4fr_0.8fr_0.8fr_0.8fr_48px] gap-x-3 gap-y-1 items-center min-h-16">
                   <span className="font-bold text-ink">{fmtDateTime(s.startedAt)}</span>
                   <span className="font-bold text-ink-soft md:text-ink">Age {s.age}</span>
                   <span className="flex items-center gap-2 font-bold"><ModeIcon mode={s.mode} size={16} box="w-8 h-8" />{modeById(s.mode)?.label}{s.targeted && <Crosshair size={14} className="text-brand-600" />}</span>
@@ -334,6 +343,9 @@ function HistoryTab({ sessions, ageFilter, onDelete, onOpen }) {
                   <span className="font-bold text-ink-soft tabular">{formatDuration(s.durationMs)}</span>
                   <ChevronDown size={20} className={`hidden md:block text-ink-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
+                <button type="button" onClick={() => setDel(s)} aria-label={`Delete the ${modeById(s.mode)?.label} session from ${fmtDateTime(s.startedAt)}`}
+                  className="press shrink-0 w-11 h-11 mr-3 rounded-xl text-bad hover:bg-bad-soft flex items-center justify-center"><Trash2 size={18} /></button>
+                </div>
                 {isOpen && (
                   <div className="px-5 pb-4 animate-rise">
                     <div className="text-xs font-bold text-ink-muted mb-2">
@@ -358,6 +370,10 @@ function HistoryTab({ sessions, ageFilter, onDelete, onOpen }) {
           })}
         </ul>
       </div>
+      <Modal open={clearAll} onClose={() => setClearAll(false)} title={`Delete all of ${childName}’s sessions?`}
+        actions={[{ label: 'Cancel', onClick: () => setClearAll(false) }, { label: `Delete all ${sessions.length}`, tone: 'bad', onClick: () => { onClearAll(); setClearAll(false); } }]}>
+        This permanently removes all {sessions.length} saved sessions for {childName}, including their stars and progress. Other children are not affected. It can’t be undone unless you exported a backup.
+      </Modal>
       <Modal open={!!del} onClose={() => setDel(null)} title="Delete this session?"
         actions={[{ label: 'Cancel', onClick: () => setDel(null) }, { label: 'Delete', tone: 'bad', onClick: () => { onDelete(del.id); setDel(null); } }]}>
         This permanently removes the {modeById(del?.mode)?.label} session from {del && fmtDateTime(del.startedAt)}. Consider exporting a backup first.
@@ -420,7 +436,6 @@ function ChildrenCard({ profiles, activeId, sessionsFor, onSwitch, onAdd, onUpda
 function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
   const [pin1, setPin1] = useState('');
   const [msg, setMsg] = useState('');
-  const [clear, setClear] = useState(false);
   const file = useRef(null);
   const Toggle = ({ on, onClick, icon, label, desc }) => (
     <button type="button" role="switch" aria-checked={on} onClick={onClick} className="w-full min-h-16 flex items-center gap-3 text-left">
@@ -463,13 +478,8 @@ function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
             try { setMsg(await family.onImportAll(f)); }
             catch (err) { setMsg(`Import failed: ${err.message}`); }
           }} />
-          <button type="button" onClick={() => setClear(true)} className="press min-h-12 px-5 rounded-2xl bg-bad-soft text-bad font-extrabold flex items-center gap-2 ml-auto"><Trash2 size={18} /> Clear this child’s progress</button>
         </div>
       </Card>
-      <Modal open={clear} onClose={() => setClear(false)} title="Clear this child’s progress?"
-        actions={[{ label: 'Cancel', onClick: () => setClear(false) }, { label: 'Delete everything', tone: 'bad', onClick: () => { onSessions([]); setClear(false); setMsg('Sessions deleted.'); } }]}>
-        This permanently deletes all {sessions.length} saved sessions for {settings.studentName || 'this child'}. It can’t be undone unless you have an exported backup.
-      </Modal>
     </div>
   );
 }
@@ -531,7 +541,7 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
 
         {tab === 'overview' && <Overview sessions={sessions} ageFilter={ageFilter} onLaunch={launch} onOpen={setReview} />}
         {tab === 'mastery' && <Mastery sessions={sessions} age={masteryAge} onLaunch={launch} />}
-        {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onOpen={setReview} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} />}
+        {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onOpen={setReview} childName={settings.studentName || displayName(profiles.find((p) => p.id === activeId), Math.max(0, profiles.findIndex((p) => p.id === activeId)))} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} onClearAll={() => onSessions([])} />}
         {tab === 'settings' && <SettingsTab settings={settings} sessions={sessions} onSettings={onSettings} onSessions={onSessions} family={family} />}
       </div>
     </div>

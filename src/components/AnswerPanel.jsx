@@ -36,7 +36,8 @@ export default function AnswerPanel({ q, value, onChange, onSubmit, state = 'idl
     );
   }
   return (
-    <div className="flex flex-col gap-3">
+    // Capped width so the typing keypad is about the size of the tap-a-number pad on a portrait iPad instead of stretching edge to edge
+    <div className="flex flex-col gap-3 w-full max-w-[26rem] mx-auto">
       <AnswerDisplay value={value || ''} state={state === 'retry' ? 'wrong' : state} hint={q.hint || (q.decimalOnly ? 'Answer as a decimal' : null)} />
       <MathKeypad value={value || ''} onChange={onChange} onSubmit={() => onSubmit(value)} disabled={disabled} submitLabel={submitLabel} compact={compact} simple={simple} big={big} />
     </div>

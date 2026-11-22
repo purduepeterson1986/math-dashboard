@@ -1,7 +1,7 @@
 import React from 'react';
-import { Lock, Star, Flame, Volume2, VolumeX, ArrowLeftRight } from 'lucide-react';
+import { Lock, Volume2, VolumeX, ArrowLeftRight, CalendarCheck } from 'lucide-react';
 
-export default function Header({ name, child, onSwitch, stars, dayStreak, sound, onToggleSound, onParent }) {
+export default function Header({ name, child, onSwitch, today = 0, sound, onToggleSound, onParent }) {
   return (
     <header className="safe-top px-4 sm:px-6 pt-3">
       <div className="flex items-center gap-3 max-w-6xl mx-auto">
@@ -12,20 +12,19 @@ export default function Header({ name, child, onSwitch, stars, dayStreak, sound,
             <div className="text-xs font-bold text-ink-muted">{child ? `Hi, ${child.name}!` : name ? `Hi, ${name}!` : 'Math & STEM Studio'}</div>
           </div>
         </div>
+        {child && (
+          <button type="button" onClick={onSwitch} aria-label={`Learning as ${child.name}. Tap to switch.`}
+            className="press h-11 pl-2 pr-3 rounded-2xl bg-white border border-line flex items-center gap-2 font-extrabold card-shadow">
+            <span className="text-2xl leading-none" aria-hidden="true">{child.avatar}</span>
+            <span className="max-w-[7rem] truncate">{child.name}</span>
+            <ArrowLeftRight size={16} className="text-ink-muted" />
+          </button>
+        )}
         <div className="ml-auto flex items-center gap-2">
-          {child && (
-            <button type="button" onClick={onSwitch} aria-label={`Learning as ${child.name}. Tap to switch.`}
-              className="press h-11 pl-2 pr-3 rounded-2xl bg-white border border-line flex items-center gap-2 font-extrabold card-shadow">
-              <span className="text-2xl leading-none" aria-hidden="true">{child.avatar}</span>
-              <span className="max-w-[7rem] truncate">{child.name}</span>
-              <ArrowLeftRight size={16} className="text-ink-muted" />
-            </button>
-          )}
-          <div className="h-11 px-3 rounded-2xl bg-white border border-line flex items-center gap-1.5 font-extrabold tabular card-shadow" title="Stars earned">
-            <Star size={18} className="text-amber-500 fill-amber-400" />{stars}
-          </div>
-          <div className="h-11 px-3 rounded-2xl bg-white border border-line flex items-center gap-1.5 font-extrabold tabular card-shadow" title="Days in a row">
-            <Flame size={18} className={dayStreak ? 'text-orange-500' : 'text-ink-muted'} />{dayStreak}
+          <div className="h-11 px-3 rounded-2xl bg-white border border-line flex items-center gap-1.5 font-extrabold tabular card-shadow" title="Sessions completed today"
+            aria-label={`${today} session${today === 1 ? '' : 's'} completed today`}>
+            <CalendarCheck size={18} className={today ? 'text-good' : 'text-ink-muted'} />{today}
+            <span className="text-xs font-bold text-ink-muted">today</span>
           </div>
           <button type="button" onClick={onToggleSound} aria-label={sound ? 'Mute sounds' : 'Turn sounds on'}
             className="press w-12 h-11 rounded-2xl bg-white border border-line flex items-center justify-center text-ink-soft card-shadow">

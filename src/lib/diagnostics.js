@@ -52,7 +52,7 @@ export function analyzeSession(session, curriculum) {
   const notes = [];
   const acc = session.total ? session.score / session.total : 0;
   const hinted = session.questions.filter((q) => q.hints > 0).length;
-  if (acc === 1 && session.total >= 5) notes.push('Perfect score! Ready for a harder setting.');
+  if (acc === 1 && session.total >= 5) notes.push('Perfect score!');
   else if (acc >= 0.85) notes.push('Strong session overall.');
   else if (acc < 0.5) notes.push('This set was tough. Try an easier setting or fewer topics at once.');
   if (hinted) notes.push(`Used hints on ${hinted} problem${hinted > 1 ? 's' : ''}; hints are good practice, keep encouraging them.`);

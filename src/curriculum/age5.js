@@ -27,9 +27,9 @@ const CATEGORIES = {
 };
 const SOLIDS = {
   sphere: ['⚽', '🏀', '🌍', '🔮', '🍊'],
-  cube: ['🎲', '🧊', '📦'],
+  cube: ['🎲', '🧊'], // no 📦: a cardboard box is usually a rectangular prism, not a cube
   cylinder: ['🥫', '🔋', '🥁'],
-  cone: ['🍦', '🎉', '🚧'],
+  cone: ['🍦', '🎉'], // no 🚧: that emoji is a road barrier, not a traffic cone
 };
 const HEAVY_LIGHT = [['🐘', '🪶', 'elephant', 'feather'], ['🚗', '⚽', 'car', 'ball'], ['🎳', '🎈', 'bowling ball', 'balloon'],
   ['🍉', '🍇', 'watermelon', 'grape'], ['🪨', '🍃', 'rock', 'leaf'], ['🐻', '🐭', 'bear', 'mouse'], ['📚', '✏️', 'stack of books', 'pencil']];
