@@ -14,8 +14,9 @@ const built = new Date().toISOString().slice(0, 10);
 // straight from a file on disk (the Desktop shortcut's offline copy).
 const versionFile = { name: 'version-file', generateBundle() { this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: `${built} · ${commit}` }) }); } };
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: './',
-  define: { __APP_VERSION__: JSON.stringify(`${built} · ${commit}`) },
+  // The test copy (dev server) always runs the files on disk, so it says so instead of showing a commit that goes stale
+  define: { __APP_VERSION__: JSON.stringify(command === 'serve' ? 'local test copy' : `${built} · ${commit}`) },
   plugins: [react(), tailwindcss(), viteSingleFile(), versionFile],
-});
+}));
