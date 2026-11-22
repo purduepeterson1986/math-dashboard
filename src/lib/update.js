@@ -1,6 +1,8 @@
 // Home Screen web apps on iPad/iPhone often keep running an old copy after a new version is published.
 // Every build publishes a tiny version.json next to the page; the app compares it with its own version and
 // offers a one-tap reload that bypasses the cache.
+import { useEffect, useState } from 'react';
+
 export const CURRENT_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
 
 /** The version currently published, or null if it can't be read (offline, dev server). */
@@ -20,4 +22,14 @@ export function reloadFresh() {
   const u = new URL(window.location.href);
   u.searchParams.set('v', String(Date.now()));
   window.location.replace(u.toString());
+}
+
+/** The version to show on screen. On the test copy this asks the dev server for the commit the files on disk are based on. */
+export function useVersion() {
+  const [v, setV] = useState(CURRENT_VERSION);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    fetch('/__version', { cache: 'no-store' }).then((r) => r.json()).then((j) => { if (j?.version) setV(j.version); }).catch(() => {});
+  }, []);
+  return v;
 }

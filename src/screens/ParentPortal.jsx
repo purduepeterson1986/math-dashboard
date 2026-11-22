@@ -10,7 +10,7 @@ import { MathText } from '../components/Visual.jsx';
 import { CURRICULA, MODES, AGE_META, getCurriculum, modeById } from '../curriculum/index.js';
 import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats, levelStats } from '../lib/diagnostics.js';
 import { AVATARS, displayName } from '../lib/profiles.js';
-import { CURRENT_VERSION, latestVersion, reloadFresh } from '../lib/update.js';
+import { CURRENT_VERSION, latestVersion, reloadFresh, useVersion } from '../lib/update.js';
 import { topicsForMode } from '../lib/session.js';
 
 const TABS = [
@@ -435,6 +435,7 @@ function ChildrenCard({ profiles, activeId, sessionsFor, onSwitch, onAdd, onUpda
 }
 
 function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
+  const shownVersion = useVersion();
   const [pin1, setPin1] = useState('');
   const [msg, setMsg] = useState('');
   const file = useRef(null);
@@ -469,7 +470,7 @@ function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
         {msg && <p className="mt-2 text-good font-bold">{msg}</p>}
       </Card>
       <Card title="App version" icon={<Download size={20} className="text-brand-600" />} className="lg:col-span-2">
-        <p className="text-ink-soft font-semibold mb-3">This device is running version <span className="font-extrabold text-ink select-text">{CURRENT_VERSION}</span>. If it looks out of date, check for an update. Your saved progress is not affected.</p>
+        <p className="text-ink-soft font-semibold mb-3">This device is running version <span className="font-extrabold text-ink select-text">{shownVersion}</span>. If it looks out of date, check for an update. Your saved progress is not affected.</p>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={async () => { setMsg('Checking…'); const v = await latestVersion(); if (!v) setMsg('Could not check. Are you online?'); else if (v !== CURRENT_VERSION) { setMsg('Updating…'); reloadFresh(); } else setMsg('You have the latest version.'); }}
             className="press min-h-12 px-5 rounded-2xl bg-brand-600 text-white font-extrabold">Check for updates</button>
