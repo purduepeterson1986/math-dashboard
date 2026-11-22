@@ -40,7 +40,8 @@ export default function ParentGate({ pin, onPass, onCancel }) {
   }, [useMath, pin, onPass]);
 
   return (
-    <div className="min-h-[100dvh] bg-canvas safe-top flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-canvas safe-top relative flex items-center justify-center p-4">
+      <p className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] right-4 text-[11px] font-semibold text-slate-400 select-text">Version {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev'}</p>
       <div className="w-full max-w-md rounded-[32px] bg-white border border-line card-shadow p-6 animate-pop">
         <button type="button" onClick={onCancel} className="press h-11 px-3 -ml-2 rounded-xl text-ink-soft font-bold flex items-center gap-1"><ArrowLeft size={20} /> Back</button>
         <div className="flex flex-col items-center text-center mt-2 mb-5">

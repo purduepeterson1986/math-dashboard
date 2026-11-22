@@ -20,6 +20,7 @@ import { starsFor } from './lib/diagnostics.js';
 import { topicsForMode } from './lib/session.js';
 import { uid } from './lib/rng.js';
 import { setMiddleEarth } from './curriculum/middleEarth.js';
+import { CURRENT_VERSION, latestVersion, reloadFresh } from './lib/update.js';
 
 export default function App() {
   // Shared by every child: sound, read-aloud, Middle-earth, parent PIN
@@ -48,6 +49,17 @@ export default function App() {
   const activate = (id) => { setTryAge(null); setSessions(loadProfileSessions(id)); setActiveId(id); setSetupMode(null); setView({ name: 'home' }); };
   const selectChild = (id) => { setTryAge(null); setSessions(loadProfileSessions(id)); setActiveId(id); }; // parent switching: stay where you are
   const switchChild = () => { setTryAge(null); setSetupMode(null); setView({ name: 'home' }); setActiveId(null); };
+
+  // A newer version has been published: offer a one-tap fresh reload (checked at launch and whenever the app comes back to the front)
+  const [updateReady, setUpdateReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const check = async () => { const v = await latestVersion(); if (alive && v && v !== CURRENT_VERSION) setUpdateReady(true); };
+    check();
+    const onVis = () => { if (!document.hidden) check(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { alive = false; document.removeEventListener('visibilitychange', onVis); };
+  }, []);
 
   // Back to "Who's learning?" after a quiet spell, so a sibling never works on the wrong profile.
   // Never in the middle of a lesson or while a parent is in the portal.
@@ -197,6 +209,12 @@ export default function App() {
         onToggleSound={() => patchSettings({ sound: !settings.sound })} onParent={() => setView({ name: 'gate' })} />
       <Home age={age} onAge={setTryAge} sessions={sessions}
         onPickMode={(m) => setSetupMode(m)} onQuickStart={(m, topics) => launchTargeted(age, m, topics)} />
+      {updateReady && (
+        <div className="fixed left-3 right-3 bottom-3 z-40 max-w-md mx-auto rounded-2xl bg-ink text-white shadow-2xl px-4 py-3 flex items-center gap-3 safe-bottom">
+          <span className="flex-1 font-bold text-sm">A new version is ready.</span>
+          <button type="button" onClick={reloadFresh} className="press min-h-11 px-4 rounded-xl bg-white text-ink font-extrabold">Update now</button>
+        </div>
+      )}
       {setupMode && curriculum && (
         <SetupSheet key={`${age}-${setupMode}`} curriculum={curriculum} mode={setupMode} saved={settings.filters[age]?.[setupMode]}
           child={multi ? { name: displayName(active, activeIndex), avatar: active.avatar } : null} onNotMe={switchChild}
