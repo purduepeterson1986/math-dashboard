@@ -253,9 +253,26 @@ export function NumberBond({ whole, parts }) {
 // Drawings imported from the Middle Earth game (see scripts/extract-middle-earth-art.mjs).
 
 const VB_W = 50;
+
+// Gimli is drawn a bit bigger than the hobbits, with a larger two-bladed axe in dark steel that shows up on a white page.
+// (The base drawing is imported; this tweak lives here so re-running the import script doesn't undo it.)
+const GIMLI_AXE = '<g><line x1="13" y1="-6" x2="13" y2="-52" stroke="#6b4a2a" stroke-width="3.2" stroke-linecap="round"/>'
+  + '<path d="M13,-58 Q20,-56 19.5,-50 Q19.5,-44 13,-42Z" fill="#7b8494" stroke="#3d4350" stroke-width="1.1"/>'
+  + '<path d="M13,-58 Q6,-56 6.5,-50 Q6.5,-44 13,-42Z" fill="#8f98a8" stroke="#3d4350" stroke-width="1.1"/></g>';
+const GIMLI = ART.gimli && { ...ART.gimli, h: 70, svg: `<g transform="scale(1.18)">${ART.gimli.svg.replace(/^<g>.*?<\/g>/, '')}${GIMLI_AXE}</g>` };
+// Each hobbit wears the first letter of their name on their chest so they are easy to tell apart (x, y, text colour).
+const LETTERS = { frodo: [0, -16.5, '#fff'], sam: [0, -19, '#4a3320'], merry: [0, -21.5, '#fff'], pippin: [0, -21, '#fff'] };
+const withLetter = (id) => {
+  const l = LETTERS[id];
+  if (!l || !ART[id]) return null;
+  const text = `<text x="${l[0]}" y="${l[1]}" text-anchor="middle" font-size="9" font-weight="900" font-family="Inter, system-ui, sans-serif" fill="${l[2]}">${ART[id].name[0]}</text>`;
+  return { ...ART[id], svg: ART[id].svg + text };
+};
+const LETTERED = Object.fromEntries(Object.keys(LETTERS).map((id) => [id, withLetter(id)]));
+const art = (id) => (id === 'gimli' && GIMLI) || LETTERED[id] || ART[id];
 /** One character, `px` tall for the tallest (Gandalf); `toScale` keeps true relative heights. */
 export function Character({ id, px = 140, toScale = false, label }) {
-  const a = ART[id];
+  const a = art(id);
   if (!a) return null;
   const top = toScale ? 90 : a.h + 6;
   const height = px;
@@ -281,8 +298,8 @@ export function Lineup({ ids, px = 200, labels = true }) {
 /** A group to count: small characters in rows of 5. */
 export function Crowd({ ids, size = 'lg', px: fixed, toScale }) {
   const base = size === 'lg' ? 100 : size === 'md' ? 80 : 50;
-  const px = fixed || (toScale ? Math.round(base * 1.5) : base);
   const perRow = ids.length <= 5 ? ids.length : 5;
+  const px = fixed || (toScale ? Math.round(base * 1.5) : base);
   return (
     <div className="inline-grid justify-center gap-x-1 gap-y-2" style={{ gridTemplateColumns: `repeat(${perRow}, auto)` }}>
       {ids.map((id, i) => <Character key={i} id={id} px={px} toScale={toScale} />)}

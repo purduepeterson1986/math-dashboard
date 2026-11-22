@@ -20,7 +20,8 @@ export const THEME_RATE = 0.5;
 const TIER = { gandalf: 4, legolas: 3, aragorn: 3, boromir: 3, gimli: 2, frodo: 1, sam: 1, merry: 1, pippin: 1 };
 const HOBBITS = ['frodo', 'sam', 'merry', 'pippin'];
 const nameOf = (id) => ART[id].name;
-const hobbitCrowd = (n) => Array.from({ length: n }, () => pick(HOBBITS));
+// Cycle through all four hobbits so a group shows variety instead of the same one four times in a row
+const hobbitCrowd = (n) => { const bag = shuffle([...HOBBITS]); return Array.from({ length: n }, (_, i) => bag[i % bag.length]); };
 const pickAcrossTiers = (k) => {
   const tiers = sample([...new Set(Object.values(TIER))], k).sort((a, b) => b - a);
   return tiers.map((t) => pick(Object.keys(TIER).filter((id) => TIER[id] === t)));
@@ -56,11 +57,13 @@ function whoTaller(topic, mode, count) {
 }
 
 function countHobbits(topic, lo, hi, mixed) {
-  const n = rand(lo, hi);
+  // In a mixed group keep the whole picture to 10 figures (two rows of five) so it fits on screen without scrolling
+  const nOthers = mixed ? rand(1, 2) : 0;
+  const n = Math.min(rand(lo, hi), 10 - nOthers);
   let ids = hobbitCrowd(n);
   let prompt = 'How many hobbits do you count?';
   if (mixed) {
-    const others = Array.from({ length: rand(1, 3) }, () => pick(['gandalf', 'gimli', 'legolas', 'aragorn']));
+    const others = Array.from({ length: nOthers }, () => pick(['gandalf', 'gimli', 'legolas', 'aragorn']));
     ids = shuffle([...ids, ...others]);
     prompt = 'How many HOBBITS? (Only count the hobbits!)';
   }
@@ -166,8 +169,8 @@ export function themed5(mode, topic, d) {
       summary: `${n} hobbits' feet`, explanation: `${n} hobbits with 2 feet each: ${Array.from({ length: n }, (_, i) => 2 * (i + 1)).join(', ')}. That's ${n * 2} feet.` });
   }
   if (topic === 'sorting') {
-    const n = d === 'gentle' ? rand(2, 4) : d === 'ready' ? rand(2, 6) : rand(4, 8);
-    const others = d === 'gentle' ? rand(1, 2) : d === 'ready' ? rand(2, 4) : rand(3, 6);
+    const n = d === 'gentle' ? rand(2, 4) : d === 'ready' ? rand(2, 6) : rand(4, 7);
+    const others = d === 'gentle' ? rand(1, 2) : d === 'ready' ? rand(2, 4) : rand(2, 3); // never more than 10 figures in all
     const ids = shuffle([...hobbitCrowd(n), ...Array.from({ length: others }, () => pick(['gandalf', 'gimli', 'legolas', 'aragorn', 'boromir']))]);
     if (d === 'stretch' && chance(0.5)) {
       return small({ key: `me:sorting:not:${ids.join(',')}`, topic, story: mode === 'story' ? { emoji: '🧺', title: 'Who Is NOT a Hobbit?' } : undefined,
