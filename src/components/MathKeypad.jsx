@@ -78,7 +78,7 @@ export default function MathKeypad({ value, onChange, onSubmit, submitLabel = 'S
       type="button"
       disabled={disabled || !value || value === '-' || value.endsWith('/')}
       onClick={() => onSubmit?.()}
-      className={`press ${h} rounded-2xl bg-brand-600 text-white ${simple && big ? 'text-2xl' : 'text-lg'} font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-brand-600/25 disabled:opacity-40 active:bg-brand-700 ${extra}`}
+      className={`press ${h} shrink-0 rounded-2xl bg-brand-600 text-white ${simple && big ? 'text-2xl' : 'text-lg'} font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-brand-600/25 disabled:opacity-40 active:bg-brand-700 ${extra}`}
     >
       {submitLabel}<CornerDownLeft size={18} />
     </button>

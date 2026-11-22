@@ -169,11 +169,11 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
           {q.input !== 'keypad' && (
             // Picture / choice / tap-a-number questions get the same Next button the keypad has: greyed out until something is picked
             <button type="button" disabled={answers[idx] === '' || answers[idx] == null} onClick={goNext}
-              className="press h-14 w-full rounded-2xl bg-brand-600 text-white text-lg font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-brand-600/25 disabled:opacity-40 active:bg-brand-700">
+              className="press h-14 min-h-14 shrink-0 w-full rounded-2xl bg-brand-600 text-white text-lg font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-brand-600/25 disabled:opacity-40 active:bg-brand-700">
               {atEnd ? 'Review' : 'Next'}<CornerDownLeft size={18} />
             </button>
           )}
-          <div className="rounded-2xl bg-white/70 border border-line p-3 space-y-2">
+          <div className="shrink-0 rounded-2xl bg-white/70 border border-line p-3 space-y-2">
             <div className="text-center">
               <div className="text-xs font-extrabold uppercase tracking-widest text-ink-muted">Question #</div>
               <div className="text-xs font-semibold text-ink-muted">Tap a number to jump to that question.</div>
@@ -187,9 +187,8 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
               </span>
             </button>
           </div>
-          <button type="button" disabled={answeredCount < count} onClick={toReview}
-            title={answeredCount < count ? `Answer all ${count} questions to unlock Review` : undefined}
-            className="press h-14 w-full rounded-2xl bg-white border-2 border-brand-600 text-brand-700 text-lg font-extrabold flex items-center justify-center gap-2 disabled:opacity-40">
+          <button type="button" onClick={toReview}
+            className="press h-14 min-h-14 shrink-0 w-full rounded-2xl bg-white border-2 border-brand-600 text-brand-700 text-lg font-extrabold flex items-center justify-center gap-2">
             <ListChecks size={20} /> Review my answers
           </button>
         </>
