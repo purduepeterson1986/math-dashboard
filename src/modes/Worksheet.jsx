@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Flag, ClipboardList, ListChecks, Check, X, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, CornerDownLeft, Flag, ClipboardList, ListChecks, Check, X, AlertTriangle } from 'lucide-react';
 import PlayShell, { StatPill } from '../components/PlayShell.jsx';
 import ProblemView from '../components/ProblemView.jsx';
 import AnswerPanel from '../components/AnswerPanel.jsx';
@@ -60,6 +60,7 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
           <button key={qq.id} type="button" onClick={() => go(i)} aria-label={`Problem ${i + 1}${has ? ', answered' : ''}${fl ? ', flagged' : ''}`}
             className={`press relative w-12 h-12 rounded-xl font-extrabold tabular border-2 ${cur ? 'border-brand-600 bg-brand-600 text-white' : has ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft'}`}>
             {i + 1}
+            {has && <span className={`absolute bottom-0.5 right-0.5 ${cur ? 'text-white' : 'text-good'}`} aria-hidden="true"><Check size={12} strokeWidth={4} /></span>}
             {fl && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-warn text-white flex items-center justify-center"><Flag size={11} strokeWidth={3} /></span>}
           </button>
         );
@@ -105,7 +106,7 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
                     <span className="block font-bold text-ink"><MathText text={qq.display || qq.prompt} /></span>
                     {qq.display && qq.prompt && <span className="block text-sm text-ink-muted font-semibold"><MathText text={qq.prompt} /></span>}
                     <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                      <span className={`font-extrabold ${has ? 'text-ink' : 'text-warn'}`}>{has ? <>Your answer: <MathText text={givenLabel(answers[i], qq)} /></> : 'Not answered'}</span>
+                      <span className={`font-extrabold ${has ? 'text-ink' : 'text-bad'}`}>{has ? <>Your answer: <MathText text={givenLabel(answers[i], qq)} /></> : 'Not answered'}</span>
                       {r && !r.correct && <span className="font-extrabold text-good">Correct: <MathText text={qq.answerLabel} /></span>}
                       {flags.has(i) && !r && <span className="text-warn font-bold flex items-center gap-1"><Flag size={14} /> flagged</span>}
                     </span>
@@ -126,6 +127,19 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
       </div>
     );
   }
+
+  // Next always goes to the next question that still has no answer (looking forward from here, then wrapping
+  // round to the start). Usually that is simply the next number, but not when the student is checking their work.
+  // When nothing is left unanswered it steps to the next number, and from the last question it becomes "Review".
+  const allAnswered = answeredCount === count;
+  const atEnd = idx === count - 1 && allAnswered;
+  const goNext = () => {
+    for (let k = 1; k < count; k++) {
+      const i = (idx + k) % count;
+      if (answers[i] === '' || answers[i] == null) return go(i);
+    }
+    return idx < count - 1 ? go(idx + 1) : toReview();
+  };
 
   const onPickAndAdvance = (v) => {
     setAnswer(v);
@@ -151,20 +165,33 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
       dock={(
         <>
           <AnswerPanel q={q} value={answers[idx]} onChange={big ? onPickAndAdvance : setAnswer} instant={false} big={big} simple={simple}
-            onSubmit={() => (idx < count - 1 ? go(idx + 1) : toReview())} submitLabel={idx < count - 1 ? 'Next' : 'Review'} compact />
-          <div className="flex gap-2">
-            <button type="button" onClick={() => go(idx - 1)} disabled={idx === 0} aria-label="Previous problem" className="press h-14 w-14 rounded-2xl bg-white border border-line flex items-center justify-center disabled:opacity-35"><ChevronLeft size={26} /></button>
-            <button type="button" onClick={() => setFlags((f) => { const n = new Set(f); if (n.has(idx)) n.delete(idx); else n.add(idx); return n; })}
-              className={`press h-14 flex-1 rounded-2xl border font-extrabold flex items-center justify-center gap-2 ${flags.has(idx) ? 'bg-warn-soft border-warn/40 text-warn' : 'bg-white border-line text-ink-soft'}`}>
-              <Flag size={20} /> {flags.has(idx) ? 'Flagged' : 'Flag'}
+            onSubmit={goNext} submitLabel={atEnd ? 'Review' : 'Next'} compact />
+          {q.input !== 'keypad' && (
+            // Picture / choice / tap-a-number questions get the same Next button the keypad has: greyed out until something is picked
+            <button type="button" disabled={answers[idx] === '' || answers[idx] == null} onClick={goNext}
+              className="press h-14 w-full rounded-2xl bg-brand-600 text-white text-lg font-extrabold flex items-center justify-center gap-1.5 shadow-lg shadow-brand-600/25 disabled:opacity-40 active:bg-brand-700">
+              {atEnd ? 'Review' : 'Next'}<CornerDownLeft size={18} />
             </button>
-            {idx < count - 1 ? (
-              <button type="button" onClick={() => go(idx + 1)} aria-label="Next problem" className="press h-14 w-14 rounded-2xl bg-white border border-line flex items-center justify-center"><ChevronRight size={26} /></button>
-            ) : (
-              <button type="button" onClick={toReview} className="press h-14 px-4 rounded-2xl bg-brand-600 text-white font-extrabold">Review</button>
-            )}
+          )}
+          <div className="rounded-2xl bg-white/70 border border-line p-3 space-y-2">
+            <div className="text-center">
+              <div className="text-xs font-extrabold uppercase tracking-widest text-ink-muted">Question #</div>
+              <div className="text-xs font-semibold text-ink-muted">Tap a number to jump to that question.</div>
+            </div>
+            {navigator}
+            <button type="button" aria-pressed={flags.has(idx)} onClick={() => setFlags((f) => { const n = new Set(f); if (n.has(idx)) n.delete(idx); else n.add(idx); return n; })}
+              className={`press min-h-14 w-full rounded-2xl border font-extrabold flex items-center justify-center gap-3 px-3 py-1.5 ${flags.has(idx) ? 'bg-warn-soft border-warn/40 text-warn' : 'bg-white border-line text-ink-soft'}`}>
+              <Flag size={32} className="shrink-0" />
+              <span className="text-left leading-tight">
+                {flags.has(idx) ? <>Flagged<br />Tap to unflag</> : <>Tap this flag to mark this question<br />to come back to</>}
+              </span>
+            </button>
           </div>
-          <div className="rounded-2xl bg-white/70 border border-line p-3">{navigator}</div>
+          <button type="button" disabled={answeredCount < count} onClick={toReview}
+            title={answeredCount < count ? `Answer all ${count} questions to unlock Review` : undefined}
+            className="press h-14 w-full rounded-2xl bg-white border-2 border-brand-600 text-brand-700 text-lg font-extrabold flex items-center justify-center gap-2 disabled:opacity-40">
+            <ListChecks size={20} /> Review my answers
+          </button>
         </>
       )}
     />
