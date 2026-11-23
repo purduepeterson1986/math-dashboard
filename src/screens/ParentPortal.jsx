@@ -155,7 +155,7 @@ function Overview({ sessions, ageFilter, onLaunch, onOpen }) {
         const recentQs = mine.slice(0, 5).flatMap((s) => s.questions);
         const slow = topicStats(recentQs).filter((t) => t.attempts >= 3 && t.avgMs > (cur.expectedMs.worksheet || 20000) * 1.3).map((t) => t.topic);
         return (
-          <Card key={age} title={`Age ${age} diagnostics · ${cur.title}`} icon={<Lightbulb size={20} className="text-warn" />}>
+          <Card key={age} title={`Age ${age} diagnostics · ${AGE_META[age]?.stage ?? cur.title}`} icon={<Lightbulb size={20} className="text-warn" />}>
             {!mine.length ? <p className="text-ink-muted font-semibold">No sessions at this age yet.</p> : (
               <div className="space-y-3">
                 <ul className="space-y-2 text-ink font-semibold">
@@ -575,7 +575,7 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
         )}
         {tab === 'mastery' && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {Object.keys(CURRICULA).map(Number).map((a) => <Chip key={a} on={masteryAge === a} onClick={() => setMasteryAge(a)}>Age {a} · {getCurriculum(a).title}</Chip>)}
+            {Object.keys(CURRICULA).map(Number).map((a) => <Chip key={a} on={masteryAge === a} onClick={() => setMasteryAge(a)}>Age {a} · {AGE_META[a]?.stage}</Chip>)}
           </div>
         )}
 

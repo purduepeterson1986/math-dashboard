@@ -127,7 +127,7 @@ export default function Runner({ mode, curriculum, config, onFinish, onExit, set
       voice={talk ? { on: settings.voice, onToggle: onToggleVoice } : null}
       stats={<StatPill tone="good" icon={<CircleCheck size={20} />}>{correctSoFar}</StatPill>}
       problem={(
-        <ProblemView q={q} big={big} autoSpeak={talk && settings.voice} voiceOn={talk && settings.voice} />
+        <ProblemView q={q} big={big} autoSpeak={talk && settings.voice} voiceOn={talk && settings.voice} revealed={answered} />
       )}
       dock={answered ? (
         <>

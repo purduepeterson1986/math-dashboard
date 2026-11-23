@@ -27,6 +27,30 @@
   --animate-float: float 3s ease-in-out infinite;
 }
 
+/* Predict-and-test scenes (components/VisualsMotion.jsx) */
+@keyframes fallOff { 0% { transform: translate(0,0) rotate(0) } 45% { transform: translate(var(--ex),0) rotate(var(--er)) } 100% { transform: translate(var(--dx),var(--dy)) rotate(var(--rot)) } }
+@keyframes wobbleStay { 0%,100% { transform: rotate(0) } 15% { transform: rotate(-3.5deg) } 35% { transform: rotate(3deg) } 55% { transform: rotate(-2deg) } 75% { transform: rotate(1deg) } }
+@keyframes tilt { 0% { transform: rotate(0) } 60% { transform: rotate(calc(var(--a) * 1.12)) } 80% { transform: rotate(calc(var(--a) * .96)) } 100% { transform: rotate(var(--a)) } }
+@keyframes dropTo { 0% { transform: translateY(0) } 70% { transform: translateY(calc(var(--dy) + 8px)) } 100% { transform: translateY(var(--dy)) } }
+@keyframes sinkTo { 0% { transform: translateY(0) rotate(0) } 22% { transform: translateY(calc(var(--dy) * .2)) rotate(-8deg) } 100% { transform: translateY(var(--dy)) rotate(14deg) } }
+@keyframes bob { 0%,100% { transform: translateY(0) rotate(-3deg) } 50% { transform: translateY(-5px) rotate(3deg) } }
+@keyframes slideDown { 0% { transform: translate(var(--x0),var(--y0)) rotate(var(--th)) } 100% { transform: translate(calc(var(--x0) + var(--dx)), calc(var(--y0) + var(--dy))) rotate(var(--th)) } }
+@keyframes spinTo { 0% { transform: rotate(0) } 100% { transform: rotate(var(--spin)) } }
+
+@keyframes mgGo { 0% { transform: translateX(0) } 38% { transform: translateX(134px) } 52% { transform: translateX(134px) } 100% { transform: translateX(4px) } }
+@keyframes mgSnap { 0%,40% { transform: translate(0,0) } 46% { transform: translate(-6px,-8px) } 52% { transform: translate(-6px,-8px) } 100% { transform: translate(-136px,-8px) } }
+@keyframes meltDown { 0% { transform: scale(1,1); opacity: 1 } 100% { transform: scale(1.15,.06); opacity: .2 } }
+@keyframes puddleGrow { 0% { transform: scale(.05) } 100% { transform: scale(1) } }
+@keyframes slideBy { 0% { transform: translateX(0) } 100% { transform: translateX(var(--mx)) } }
+@keyframes fadeOut { 0% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes popIn { 0% { opacity: 0; transform: scale(.6) } 100% { opacity: 1; transform: scale(1) } }
+@keyframes growUp { 0% { transform: scaleY(.04) } 100% { transform: scaleY(1) } }
+@keyframes wilt { 0% { transform: scaleY(.04) rotate(0) } 40% { transform: scaleY(.38) rotate(0) } 100% { transform: scaleY(.38) rotate(38deg) } }
+@keyframes rain { 0% { transform: translateY(-6px); opacity: 0 } 20% { opacity: 1 } 100% { transform: translateY(70px); opacity: 0 } }
+@keyframes fanSpin { to { transform: rotate(360deg) } }
+@keyframes windAway { 0% { transform: translate(0,0) } 50% { transform: translate(calc(var(--wx) * .5), -44px) } 100% { transform: translate(var(--wx), var(--wy)) } }
+@keyframes ropeShrink { 0% { transform: scaleX(1) } 100% { transform: scaleX(var(--s)) } }
+
 @keyframes pop { 0% { transform: scale(.85); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
 @keyframes shake { 0%,100% { transform: translateX(0) } 20%,60% { transform: translateX(-10px) } 40%,80% { transform: translateX(10px) } }
 @keyframes rise { 0% { transform: translateY(12px); opacity: 0 } 100% { transform: translateY(0); opacity: 1 } }

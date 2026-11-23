@@ -4,6 +4,7 @@
 import { chance } from '../lib/rng.js';
 import * as E from './extraEarly.js';
 import * as M from './extraMid.js';
+import { tryIt } from './extraMotion.js';
 
 const LV = { gentle: 0, ready: 1, stretch: 2, easy: 0, standard: 1, challenge: 2 };
 const up = (n) => Math.min(2, n + 1);
@@ -16,6 +17,7 @@ export function extraFor(age, mode, topic, d) {
   const p = (x) => chance(x);
   switch (age) {
     case 3:
+      if (topic === 'tryit') return tryIt(mode, lv);
       if (topic === 'position') return E.position(mode, lv);
       if (topic === 'numerals' && p(0.55)) return E.numeralsMore(mode, lv);
       if (topic === 'size' && p(0.55)) return E.sizesMore(mode, lv);

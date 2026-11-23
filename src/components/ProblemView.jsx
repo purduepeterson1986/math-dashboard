@@ -4,7 +4,7 @@ import Visual, { MathText } from './Visual.jsx';
 import { speak, canSpeak } from '../lib/audio.js';
 
 /** Left/top side of the play screen: story frame, prompt, big expression, visual. */
-export default function ProblemView({ q, big, autoSpeak, voiceOn = true, children }) {
+export default function ProblemView({ q, big, autoSpeak, voiceOn = true, revealed, children }) {
   useEffect(() => {
     if (autoSpeak && q?.speak) {
       const t = setTimeout(() => speak(q.speak), 250);
@@ -43,7 +43,7 @@ export default function ProblemView({ q, big, autoSpeak, voiceOn = true, childre
       )}
       {q.visual && (
         <div className="w-full flex justify-center items-center min-h-24 py-1">
-          <Visual v={q.visual} size={big ? 'lg' : 'md'} />
+          <Visual v={q.visual} size={big ? 'lg' : 'md'} revealed={revealed} />
         </div>
       )}
       {children}

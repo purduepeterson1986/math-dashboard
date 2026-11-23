@@ -3,7 +3,7 @@ import { ChevronRight, Target, Trophy, Clock3 } from 'lucide-react';
 import AgeSlider from '../components/AgeSlider.jsx';
 import ComingSoon from '../components/ComingSoon.jsx';
 import ModeIcon, { modeStyle } from '../components/ModeIcon.jsx';
-import { MODES, getCurriculum } from '../curriculum/index.js';
+import { MODES, AGE_META, getCurriculum } from '../curriculum/index.js';
 import { masteryForAge, weakTopics } from '../lib/diagnostics.js';
 
 export default function Home({ age, onAge, sessions, onPickMode, onQuickStart }) {
@@ -21,7 +21,7 @@ export default function Home({ age, onAge, sessions, onPickMode, onQuickStart })
         <>
           <div className="flex flex-wrap items-end justify-between gap-3 px-1">
             <div>
-              <h1 className="text-3xl font-black text-ink">{cur.title}</h1>
+              <h1 className="text-3xl font-black text-ink">Age {age} · {AGE_META[age]?.stage ?? cur.title}</h1>
               <p className="text-ink-soft font-semibold">{cur.tagline}</p>
             </div>
             <div className="flex gap-2">

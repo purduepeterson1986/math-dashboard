@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { COLORS } from '../curriculum/shared.js';
+import Motion from './VisualsMotion.jsx';
 import { Clock, Coins, Ruler, CubeMeasure, Stick, ArrayGrid, Base10, FractionShape, BarGraph, NumberBond, Character, Lineup, Crowd, PictureGraph, AreaGrid, FractionLine } from './VisualsEarly.jsx';
 
 /* ---------------------------- MathText ---------------------------- */
@@ -405,10 +406,11 @@ function Geometry({ v }) {
 }
 
 /* ------------------------------ main ------------------------------ */
-export default function Visual({ v, size = 'lg' }) {
+export default function Visual({ v, size = 'lg', revealed }) {
   if (!v) return null;
   const S = SZ[size] || SZ.lg;
   switch (v.type) {
+    case 'motion': return <Motion v={v} revealed={revealed} />;
     case 'objects': return <Objects v={v} size={size} />;
     case 'groups':
       return (

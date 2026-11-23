@@ -409,6 +409,7 @@ export default {
     { id: 'size', label: 'Size Comparison', group: 'Shapes & Sizes', icon: 'Ruler', modes: ALL },
     { id: 'position', label: 'Position Words', group: 'Shapes & Sizes', icon: 'Move', modes: ALL },
     { id: 'patterns', label: 'Simple Patterns', group: 'Shapes & Sizes', icon: 'Repeat', modes: ['worksheet', 'story', 'stem'] },
+    { id: 'tryit', label: 'Try It & See', group: 'Science Lab', icon: 'FlaskConical', modes: ['stem'] },
   ],
   difficulties: [
     { id: 'gentle', label: 'Warm-up', detail: 'Numbers to 5 (a peek at 6), AB patterns, 2–3 choices' },
