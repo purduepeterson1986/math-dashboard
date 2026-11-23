@@ -14,9 +14,9 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, voic
   return (
     <div className="h-[100dvh] flex flex-col bg-canvas safe-top">
       <header className="shrink-0 px-4 pt-3 pb-2">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <button type="button" aria-label="Exit session" onClick={() => (confirmExit ? setAsking(true) : onExit())}
-            className="press w-12 h-12 rounded-2xl bg-white border border-line flex items-center justify-center text-ink-soft card-shadow">
+            className="press w-12 h-12 shrink-0 rounded-2xl bg-white border border-line flex items-center justify-center text-ink-soft card-shadow">
             <X size={24} />
           </button>
           <div className="flex items-center gap-2 min-w-0">
@@ -27,7 +27,7 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, voic
             </div>
             {level && <span className="shrink-0 ml-1 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-sm font-extrabold whitespace-nowrap">{level}</span>}
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             {scratch && <PenButton on={pen} onClick={() => setPen((v) => !v)} />}
             {voice && (
               <button type="button" onClick={voice.onToggle} aria-pressed={voice.on} aria-label={voice.on ? 'Turn voice off' : 'Turn voice on'}
@@ -45,8 +45,8 @@ export default function PlayShell({ title, subtitle, icon, progress, stats, voic
           </div>
         )}
       </header>
-      <main className="flex-1 min-h-0 flex landscape:flex-row portrait:flex-col gap-3 px-4 pb-3 safe-bottom">
-        <div className="flex-1 min-h-0 relative flex">
+      <main className="flex-1 min-h-0 flex landscape:flex-row portrait:flex-col portrait:overflow-y-auto gap-3 px-4 pb-3 safe-bottom">
+        <div className="flex-1 min-h-0 portrait:min-h-[30dvh] relative flex">
           <section className="flex-1 min-h-0 scroll-y rounded-[28px] bg-white/60 border border-line px-5 py-6 flex">
             <div className="m-auto w-full">{problem}</div>
           </section>

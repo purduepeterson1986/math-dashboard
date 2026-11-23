@@ -9,8 +9,9 @@ import Summary from './Summary.jsx';
 import { MathText } from '../components/Visual.jsx';
 import { CURRICULA, MODES, AGE_META, getCurriculum, modeById } from '../curriculum/index.js';
 import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats, levelStats } from '../lib/diagnostics.js';
-import { AVATARS, displayName } from '../lib/profiles.js';
+import { AVATARS, displayName, compactSessions } from '../lib/profiles.js';
 import { CURRENT_VERSION, latestVersion, reloadFresh, useVersion } from '../lib/update.js';
+import { storageUsage } from '../lib/storage.js';
 import { topicsForMode } from '../lib/session.js';
 
 const TABS = [
@@ -352,6 +353,7 @@ function HistoryTab({ sessions, ageFilter, onDelete, onClearAll, childName, onOp
                     <div className="text-xs font-bold text-ink-muted mb-2">
                       Level: {cur?.difficulties.find((d) => d.id === s.config?.difficulty)?.label || '—'} · Topics: {(s.config?.topics || []).map((id) => cur?.topics.find((t) => t.id === id)?.label || id).join(', ')}
                     </div>
+                    {s.compact ? <p className="rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink-muted">Question details were removed to save space. The score, topics and times are kept.</p> : (
                     <ul className="rounded-2xl border border-line divide-y divide-line">
                       {s.questions.map((q, i) => (
                         <li key={i} className="flex items-center gap-3 px-3 py-2 text-sm">
@@ -362,7 +364,8 @@ function HistoryTab({ sessions, ageFilter, onDelete, onClearAll, childName, onOp
                         </li>
                       ))}
                     </ul>
-                    <button type="button" onClick={() => onOpen(s)} className="press mt-3 mr-2 min-h-11 px-4 rounded-xl bg-brand-600 text-white font-extrabold inline-flex items-center gap-2">Full review</button>
+                    )}
+                    {!s.compact && <button type="button" onClick={() => onOpen(s)} className="press mt-3 mr-2 min-h-11 px-4 rounded-xl bg-brand-600 text-white font-extrabold inline-flex items-center gap-2">Full review</button>}
                     <button type="button" onClick={() => setDel(s)} className="press mt-3 min-h-11 px-4 rounded-xl bg-bad-soft text-bad font-extrabold inline-flex items-center gap-2"><Trash2 size={16} /> Delete session</button>
                   </div>
                 )}
@@ -404,7 +407,7 @@ function ChildrenCard({ profiles, activeId, sessionsFor, onSwitch, onAdd, onUpda
               <label className="text-xs font-extrabold text-ink-muted flex flex-col gap-0.5">Age
                 <select value={p.age} onChange={(e) => onUpdate(p.id, { age: Number(e.target.value) })} aria-label={`Age for ${displayName(p, i)}`}
                   className="h-12 rounded-2xl border-2 border-line bg-white px-3 text-base font-bold text-ink focus:border-brand-500 outline-none">
-                  {Object.keys(AGE_META).map(Number).sort((a, b) => a - b).map((a) => <option key={a} value={a}>{a}{CURRICULA[a] ? '' : ' (coming soon)'}</option>)}
+                  {Object.keys(AGE_META).map(Number).sort((a, b) => a - b).map((a) => <option key={a} value={a} disabled={!CURRICULA[a] && a !== p.age}>{a}{CURRICULA[a] ? '' : ' (coming soon)'}</option>)}
                 </select>
               </label>
               <div className="text-xs font-bold text-ink-muted w-28">{list.length} session{list.length === 1 ? '' : 's'}<br />{last ? `Last: ${fmtDate(last.startedAt)}` : 'Not started yet'}</div>
@@ -430,6 +433,26 @@ function ChildrenCard({ profiles, activeId, sessionsFor, onSwitch, onAdd, onUpda
         actions={[{ label: 'Cancel', onClick: () => setDel(null) }, { label: 'Remove child and progress', tone: 'bad', onClick: () => { onRemove(del.id); setDel(null); } }]}>
         This permanently deletes this child’s profile and all {del ? sessionsFor(del.id).length : 0} of their saved sessions on this device. It can’t be undone unless you have an exported backup.
       </Modal>
+    </Card>
+  );
+}
+
+function StorageCard({ profiles, sessionsFor, onCompact }) {
+  const [tick, setTick] = useState(0);
+  const u = useMemo(() => storageUsage(), [tick, profiles]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [msg, setMsg] = useState('');
+  const tone = u.pct >= 90 ? 'bg-bad' : u.pct >= 70 ? 'bg-warn' : 'bg-good';
+  const total = profiles.reduce((a, p) => a + sessionsFor(p.id).length, 0);
+  return (
+    <Card title="Storage" icon={<Download size={20} className="text-brand-600" />} className="lg:col-span-2">
+      <p className="text-ink-soft font-semibold mb-3">All children’s progress ({total} sessions) is saved in this browser, which has limited room. {u.pct}% is used.{u.pct >= 70 ? ' Space is getting low: export a backup, then free up space.' : ''}</p>
+      <div className="h-3 rounded-full bg-line overflow-hidden mb-3" role="progressbar" aria-valuenow={u.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Storage used"><div className={`h-full ${tone}`} style={{ width: `${Math.max(2, u.pct)}%` }} /></div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => { const n = onCompact(); setTick((t) => t + 1); setMsg(n ? `Made ${n} older session${n === 1 ? '' : 's'} smaller. Scores, stars and mastery are unchanged.` : 'Nothing to shrink yet. Only sessions older than each child’s latest 60 are shrunk.'); }}
+          className="press min-h-12 px-5 rounded-2xl bg-brand-50 text-brand-700 font-extrabold">Free up space</button>
+        {msg && <span className="text-good font-bold">{msg}</span>}
+      </div>
+      <p className="mt-2 text-sm font-semibold text-ink-muted">“Free up space” keeps each child’s latest 60 sessions in full. Older ones keep their scores and times, but lose the question-by-question detail.</p>
     </Card>
   );
 }
@@ -477,6 +500,7 @@ function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
           <button type="button" onClick={reloadFresh} className="press min-h-12 px-5 rounded-2xl bg-brand-50 text-brand-700 font-extrabold">Force reload</button>
         </div>
       </Card>
+      <StorageCard profiles={family.profiles} sessionsFor={family.sessionsFor} onCompact={family.onCompact} />
       <Card title="Backup & data" icon={<Download size={20} className="text-brand-600" />} className="lg:col-span-2">
         <p className="text-ink-soft font-semibold mb-3">Progress for every child is saved in this browser on this device. Export a JSON backup regularly, especially before clearing Safari data.</p>
         <div className="flex flex-wrap gap-3">
@@ -495,14 +519,15 @@ function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
 }
 
 /* ------------------------------ Portal ------------------------------ */
-export default function ParentPortal({ sessions, settings, onSettings, onSessions, onExit, onLaunch, profiles = [], activeId, sessionsFor = () => [], onSwitchChild, onAddChild, onUpdateChild, onRemoveChild, onExportAll, onImportAll }) {
-  const family = { profiles, activeId, sessionsFor, onSwitch: onSwitchChild, onAdd: onAddChild, onUpdate: onUpdateChild, onRemove: onRemoveChild, onExportAll, onImportAll };
+export default function ParentPortal({ sessions, settings, onSettings, onSessions, onExit, onLaunch, profiles = [], activeId, sessionsFor = () => [], onSwitchChild, onAddChild, onUpdateChild, onRemoveChild, onExportAll, onImportAll, onCompact }) {
+  const family = { profiles, activeId, sessionsFor, onSwitch: onSwitchChild, onAdd: onAddChild, onUpdate: onUpdateChild, onRemove: onRemoveChild, onExportAll, onImportAll, onCompact };
   const [tab, setTab] = useState('overview');
   const ages = useMemo(() => [...new Set([...Object.keys(CURRICULA).map(Number), ...sessions.map((s) => s.age)])].sort((a, b) => a - b), [sessions]);
   const [ageFilter, setAgeFilter] = useState('all');
   const [masteryAge, setMasteryAge] = useState(settings.age in CURRICULA ? settings.age : Number(Object.keys(CURRICULA)[0]));
   const launch = (age, mode, topics) => onLaunch(age, mode, topics);
   const [review, setReview] = useState(null);
+  const openReview = (s) => { if (!s?.compact) setReview(s); }; // shrunk sessions have no question detail to review
   if (review) {
     return <Summary readOnly session={review} curriculum={getCurriculum(review.age)} onHome={() => setReview(null)} onTarget={(topics) => launch(review.age, review.mode, topics)} />;
   }
@@ -518,6 +543,11 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
           </div>
         </div>
 
+        {storageUsage().pct >= 75 && (
+          <button type="button" onClick={() => setTab('settings')} className="press w-full text-left mb-3 rounded-2xl bg-warn-soft border-2 border-warn/40 text-warn px-4 py-3 font-bold">
+            Saved-data space is {storageUsage().pct}% full. Tap here to export a backup and free up space.
+          </button>
+        )}
         {profiles.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-2 mb-2" role="group" aria-label="Choose a child">
             {profiles.map((p, i) => (
@@ -549,9 +579,9 @@ export default function ParentPortal({ sessions, settings, onSettings, onSession
           </div>
         )}
 
-        {tab === 'overview' && <Overview sessions={sessions} ageFilter={ageFilter} onLaunch={launch} onOpen={setReview} />}
+        {tab === 'overview' && <Overview sessions={sessions} ageFilter={ageFilter} onLaunch={launch} onOpen={openReview} />}
         {tab === 'mastery' && <Mastery sessions={sessions} age={masteryAge} onLaunch={launch} />}
-        {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onOpen={setReview} childName={settings.studentName || displayName(profiles.find((p) => p.id === activeId), Math.max(0, profiles.findIndex((p) => p.id === activeId)))} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} onClearAll={() => onSessions([])} />}
+        {tab === 'history' && <HistoryTab sessions={sessions} ageFilter={ageFilter} onOpen={openReview} childName={settings.studentName || displayName(profiles.find((p) => p.id === activeId), Math.max(0, profiles.findIndex((p) => p.id === activeId)))} onDelete={(id) => onSessions(sessions.filter((s) => s.id !== id))} onClearAll={() => onSessions([])} />}
         {tab === 'settings' && <SettingsTab settings={settings} sessions={sessions} onSettings={onSettings} onSessions={onSessions} family={family} />}
       </div>
     </div>

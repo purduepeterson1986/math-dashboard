@@ -13,7 +13,7 @@ import { getCurriculum } from './curriculum/index.js';
 import { loadSettings, saveSettings } from './lib/storage.js';
 import {
   loadProfiles, saveProfiles, loadProfileSessions, saveProfileSessions, deleteProfileSessions, newProfile,
-  mergeSessions, exportFamily, readBackup, IDLE_MS, displayName,
+  mergeSessions, exportFamily, readBackup, IDLE_MS, displayName, compactSessions,
 } from './lib/profiles.js';
 import { setSoundEnabled, setVoiceEnabled, unlockAudio, audioReady, stopSpeaking } from './lib/audio.js';
 import { starsFor } from './lib/diagnostics.js';
@@ -42,8 +42,10 @@ export default function App() {
   const settings = useMemo(() => ({ ...shared, age: active?.age ?? 3, filters: active?.filters || {}, studentName: active?.name || '' }), [shared, active]);
 
   useEffect(() => { saveSettings(shared); setSoundEnabled(shared.sound); setVoiceEnabled(shared.voice); setMiddleEarth(shared.middleEarth !== false); }, [shared]);
-  useEffect(() => { saveProfiles(profiles); }, [profiles]);
-  useEffect(() => { if (activeId) saveProfileSessions(activeId, sessions); }, [sessions, activeId]);
+  // If the browser refuses a save (storage full) the parent is told, instead of progress silently going unsaved
+  const [saveFailed, setSaveFailed] = useState(false);
+  useEffect(() => { if (!saveProfiles(profiles)) setSaveFailed(true); }, [profiles]);
+  useEffect(() => { if (activeId) setSaveFailed(!saveProfileSessions(activeId, sessions)); }, [sessions, activeId]);
 
   const updateProfile = useCallback((id, patch) => setProfiles((list) => list.map((p) => (p.id === id ? { ...p, ...(typeof patch === 'function' ? patch(p) : patch) } : p))), []);
   const activate = (id) => { setTryAge(null); setSessions(loadProfileSessions(id)); setActiveId(id); setSetupMode(null); setView({ name: 'home' }); };
@@ -152,6 +154,17 @@ export default function App() {
     setProfiles(rest);
     if (id === activeId) activate(rest[0].id);
   };
+  // Shrink every child's older sessions (keeps scores, stars and mastery; drops question text)
+  const compactAll = () => {
+    let changed = 0;
+    for (const p of profiles) {
+      const before = sessionsFor(p.id);
+      const after = compactSessions(before);
+      const n = after.filter((s, i) => s.compact && !before[i].compact).length;
+      if (n) { changed += n; if (p.id === activeId) setSessions(after); else saveProfileSessions(p.id, after); }
+    }
+    return changed;
+  };
   const exportAll = () => exportFamily(profiles.map((p) => ({ profile: p, sessions: sessionsFor(p.id) })), settings);
   const importAll = async (file) => {
     const entries = await readBackup(file);
@@ -198,7 +211,7 @@ export default function App() {
       <ParentPortal sessions={sessions} settings={settings} onSettings={patchSettings} onSessions={setSessions}
         profiles={profiles} activeId={activeId} sessionsFor={sessionsFor}
         onSwitchChild={selectChild} onAddChild={addChild} onUpdateChild={(id, patch) => { if (typeof patch === 'object' && 'age' in patch && id === activeId) setTryAge(null); updateProfile(id, patch); }} onRemoveChild={removeChild}
-        onExportAll={exportAll} onImportAll={importAll}
+        onExportAll={exportAll} onImportAll={importAll} onCompact={compactAll}
         onExit={() => setView({ name: 'home' })} onLaunch={launchTargeted} />
     );
   }
@@ -207,6 +220,11 @@ export default function App() {
     <div className="min-h-[100dvh] pb-8">
       <Header name={settings.studentName} child={multi ? { name: displayName(active, activeIndex), avatar: active.avatar } : null} onSwitch={switchChild} today={todayCount} sound={settings.sound}
         onToggleSound={() => patchSettings({ sound: !settings.sound })} onParent={() => setView({ name: 'gate' })} />
+      {saveFailed && (
+        <div role="alert" className="mx-4 sm:mx-6 mt-3 max-w-6xl md:mx-auto rounded-2xl bg-bad-soft border-2 border-bad/40 text-bad px-4 py-3 font-bold">
+          This device’s saved-data space is full, so new sessions are not being saved. A grown-up can free space in Parent Portal → Settings → Storage.
+        </div>
+      )}
       <Home age={age} onAge={setTryAge} sessions={sessions}
         onPickMode={(m) => setSetupMode(m)} onQuickStart={(m, topics) => launchTargeted(age, m, topics)} />
       {updateReady && (

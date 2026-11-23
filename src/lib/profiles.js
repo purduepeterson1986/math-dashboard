@@ -30,6 +30,16 @@ export function loadProfileSessions(id) {
 export const saveProfileSessions = (id, list) => safeSet(sessionKey(id), list);
 export function deleteProfileSessions(id) { try { window.localStorage.removeItem(sessionKey(id)); } catch { /* ignore */ } }
 
+/** Shrink old sessions to save space: keep the score, topics and times (so stars and mastery are unchanged) but drop each question's text. */
+export function compactSessions(list, keepFull = 60) {
+  const sorted = [...list].sort((a, b) => b.startedAt - a.startedAt);
+  const full = new Set(sorted.slice(0, keepFull).map((s) => s.id));
+  return list.map((s) => (full.has(s.id) || s.compact ? s : {
+    ...s, compact: true,
+    questions: s.questions.map((q) => ({ topic: q.topic, mode: q.mode, correct: q.correct, ms: q.ms, hints: q.hints, retried: q.retried, skipped: q.skipped })),
+  }));
+}
+
 export function newProfile(list) {
   const used = new Set(list.map((p) => p.avatar));
   const avatar = AVATARS.find((a) => !used.has(a)) || AVATARS[list.length % AVATARS.length];

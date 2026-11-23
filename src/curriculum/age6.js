@@ -10,6 +10,9 @@ import * as A5 from './age5.js';
 import * as A7 from './age7.js';
 import { retopic, withSpeak, makeChoices, NAMES } from './shared.js';
 import { themed6, middleEarthOn, THEME_RATE } from './middleEarth.js';
+import { extraFor } from './extraWire.js';
+import { patterns as A3patterns } from './age3.js';
+import { growPattern, numberRule } from './extraEarly.js';
 import { rand, pick, sample, chance } from '../lib/rng.js';
 import { toSpeech } from '../lib/audio.js';
 
@@ -100,10 +103,12 @@ export default {
     { id: 'money', label: 'Coins', group: 'Measuring & Data', modes: ['flash', 'worksheet', 'story'] },
     { id: 'graphs', label: 'Picture & Bar Graphs', group: 'Measuring & Data', modes: ['worksheet', 'stem'] },
     { id: 'shapes', label: 'Shapes, Halves & Fourths', group: 'Shapes', modes: ['flash', 'worksheet', 'stem'] },
+    { id: 'fractions', label: 'Halves & Fourths', group: 'Shapes', modes: ALL },
+    { id: 'patterns', label: 'Patterns & Rules', group: 'Numbers', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
     { id: 'gentle', label: 'Warm-up', detail: 'Add & subtract within 10, numbers to 100, hour & half hour' },
-    { id: 'ready', label: 'Advanced', detail: 'Within 20, missing numbers, tens & ones, place value to 120, picture graphs' },
+    { id: 'ready', label: 'Standard', detail: 'Within 20, missing numbers, tens & ones, place value to 120, picture graphs' },
     { id: 'stretch', label: 'Stretch', detail: '2nd-grade reach: 2-digit adding & subtracting, quarter hours, scaled graphs, fourths' },
   ],
   defaultDifficulty: 'ready',
@@ -124,6 +129,8 @@ export default {
       const themed = themed6(mode, topic, d);
       if (themed) return withSpeak(themed, toSpeech);
     }
+    const extra = extraFor(6, mode, topic, d);
+    if (extra) return withSpeak(extra, toSpeech);
     let q;
     switch (topic) {
       case 'add': q = d === 'stretch' ? A7.addition(mode, 'easy') : A5.addition(mode, D5[d]); break;
@@ -142,6 +149,11 @@ export default {
         else q = d === 'ready' ? A7.money(mode, 'easy', { n: [5, 8] }) : A7.money(mode, 'standard');
         break;
       case 'graphs': q = graphs(mode, d); break;
+      case 'patterns': {
+        const toKey = (x) => (x && x.input === 'kidpad' ? { ...x, input: 'keypad' } : x);
+        q = d === 'gentle' ? A3patterns(mode, 'stretch') : d === 'ready' ? (chance(0.35) ? A3patterns(mode, 'stretch') : chance(0.5) ? toKey(growPattern(mode, 2)) : toKey(numberRule(mode, 1, 60))) : toKey(chance(0.5) ? numberRule(mode, 2, 120) : growPattern(mode, 2));
+        break;
+      }
       case 'shapes': { const m2 = mode === 'flash' ? 'worksheet' : mode; q = d === 'gentle' ? A5.shapes(mode, 'stretch', ['riddle', 'riddle', 'corners', 'sides']) : d === 'ready' ? (chance(0.6) ? A7.fractions(m2, 'easy') : A7.geometry(m2, 'easy', ['name'])) : (chance(0.65) ? A7.fractions(m2, 'standard') : A7.geometry(m2, 'standard', ['name'])); break; }
       default: return null;
     }

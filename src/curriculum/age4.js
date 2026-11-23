@@ -9,6 +9,7 @@ import * as A3 from './age3.js';
 import * as A5 from './age5.js';
 import { retopic } from './shared.js';
 import { themed4, middleEarthOn, THEME_RATE } from './middleEarth.js';
+import { extraFor } from './extraWire.js';
 import { chance } from '../lib/rng.js';
 
 const lvl = (d) => (d === 'gentle' || d === 'stretch' ? d : 'ready');
@@ -37,10 +38,11 @@ export default {
     { id: 'patterns', label: 'AB & ABC Patterns', group: 'Shapes & Measuring', modes: ['worksheet', 'story', 'stem'] },
     { id: 'measure', label: 'Measuring with Objects', group: 'Shapes & Measuring', modes: ['worksheet', 'story', 'stem'] },
     { id: 'sorting', label: 'Sorting & Classifying', group: 'Shapes & Measuring', modes: ['worksheet', 'story', 'stem'] },
+    { id: 'position', label: 'Position Words', group: 'Shapes & Measuring', modes: ALL },
   ],
   difficulties: [
     { id: 'gentle', label: 'Warm-up', detail: 'Count to 10, numbers to 10, “one more”, AB patterns, flat shapes' },
-    { id: 'ready', label: 'Advanced', detail: 'Count to 16, numbers to 20, one more & one less, AAB & ABB patterns, counting by 10s' },
+    { id: 'ready', label: 'Standard', detail: 'Count to 16, numbers to 20, one more & one less, AAB & ABB patterns, counting by 10s' },
     { id: 'stretch', label: 'Stretch', detail: 'Kindergarten reach: count to 20, teen numbers, add & take away, greatest/least, 3D shapes, ABC patterns, inches' },
   ],
   defaultDifficulty: 'ready',
@@ -61,6 +63,8 @@ export default {
       const themed = themed4(mode, topic, d);
       if (themed) return themed;
     }
+    const extra = extraFor(4, mode, topic, d);
+    if (extra) return extra;
     switch (topic) {
       case 'count10': return by(d,
         () => A3.counting('count10', mode, 'gentle', 2, 5),

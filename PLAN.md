@@ -21,6 +21,7 @@ src/
     age6.js         Age 6 (1st grade) — Age 5 & 7 generators + picture graphs, read aloud
     age7.js         Age 7 (2nd grade) topics + generators
     age8.js         Age 8 (3rd grade) — × ÷ facts, fraction lines, area grids + Age 7 generators
+    age9.js         Age 9 (4th grade) — multi-digit ×, long division, fractions & decimals, angles (generators in age9a.js, age9b.js, age9kit.js)
     middleEarth.js  Lord of the Rings themed questions for every age (art: middleEarthArt.js)
     age12.js        Age 12 topics + generators (all 5 modes)
     shared.js       choice builders, names, emoji banks

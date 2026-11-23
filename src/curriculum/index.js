@@ -4,6 +4,7 @@ import age5 from './age5.js';
 import age6 from './age6.js';
 import age7 from './age7.js';
 import age8 from './age8.js';
+import age9 from './age9.js';
 import age12 from './age12.js';
 
 /**
@@ -11,7 +12,7 @@ import age12 from './age12.js';
  *   1. create src/curriculum/ageN.js following the contract in PLAN.md
  *   2. import it and add it here.
  */
-export const CURRICULA = { 3: age3, 4: age4, 5: age5, 6: age6, 7: age7, 8: age8, 12: age12 };
+export const CURRICULA = { 3: age3, 4: age4, 5: age5, 6: age6, 7: age7, 8: age8, 9: age9, 12: age12 };
 export const getCurriculum = (age) => CURRICULA[age] || null;
 
 export const MIN_AGE = 3;
@@ -24,7 +25,7 @@ export const AGE_META = {
   6: { stage: '1st Grade', planned: [] },
   7: { stage: '2nd Grade', planned: [] },
   8: { stage: '3rd Grade', planned: [] },
-  9: { stage: '4th Grade', planned: ['Multi-digit multiplication', 'Long division', 'Equivalent fractions', 'Angles', 'Factors & multiples'] },
+  9: { stage: '4th Grade', planned: [] },
   10: { stage: '5th Grade', planned: ['Fraction operations', 'Decimals to thousandths', 'Volume', 'Order of operations', 'Coordinate plane'] },
   11: { stage: '6th Grade', planned: ['Ratios & rates', 'Dividing fractions', 'Expressions', 'Statistics', 'Negative numbers'] },
   12: { stage: '7th Grade', planned: [] },

@@ -480,4 +480,56 @@ export function themed8(mode, topic, d) {
   return null;
 }
 
-export const THEMED = { 3: themed3, 4: themed4, 5: themed5, 6: themed6, 7: themed7, 8: themed8, 12: themed12 };
+/* ------------------------------------ Age 9 ------------------------------------ */
+export function themed9(mode, topic, d) {
+  const by = (e, s, c) => (d === 'easy' ? e : d === 'challenge' ? c : s);
+  const fm = (n) => n.toLocaleString('en-US');
+  if (topic === 'mul' && (mode === 'story' || mode === 'stem')) {
+    const r = by(rand(12, 49), rand(112, 799), rand(112, 499)); const c = by(rand(3, 9), rand(3, 9), rand(12, 48));
+    const T = pick([['🏹', "Helm's Deep", `At Helm's Deep, ${fm(r)} elven archers each carry ${fm(c)} arrows. How many arrows in all?`],
+      ['🍃', 'Lembas Bread', `The elves bake ${fm(r)} batches of lembas with ${fm(c)} wafers in each batch. How many wafers?`],
+      ['🐴', 'Riders of Rohan', `Rohan sends ${fm(r)} riders to each of ${fm(c)} villages. How many riders in all?`]]);
+    return typed({ key: `me9:mul:${T[1]}:${r}:${c}`, topic, story: { emoji: T[0], title: T[1] }, prompt: T[2], answer: r * c, hints: ['Break the bigger number into hundreds, tens and ones.'], explanation: `${fm(r)} × ${fm(c)} = ${fm(r * c)}.` });
+  }
+  if (topic === 'div' && mode === 'story') {
+    const k = by(rand(3, 9), rand(3, 9), rand(6, 9)); const q = by(rand(11, 30), rand(102, 299), rand(1002, 1499)); const r = d === 'easy' ? 0 : rand(1, k - 1); const n = k * q + r;
+    return typed({ key: `me9:div:${n}:${k}`, topic, story: { emoji: '🍖', title: 'Feast at Bag End' }, prompt: `Bilbo's feast has ${fm(n)} sausages. Each table of hobbits gets ${k} sausages. ${r ? 'How many tables get a full share?' : 'How many tables is that?'}`, answer: q,
+      hints: [`${fm(n)} ÷ ${k}`], explanation: `${fm(n)} ÷ ${k} = ${fm(q)}${r ? ` with ${r} left over` : ''}.` });
+  }
+  if ((topic === 'add' || topic === 'sub') && mode === 'story') {
+    const a = by(rand(1200, 6900), rand(12000, 79000), rand(120000, 480000)); const b = by(rand(1100, 2900), rand(11000, 49000), rand(90000, 290000)); const orcs = topic === 'add';
+    return typed({ key: `me9:${topic}:${a}:${b}`, topic, story: { emoji: orcs ? '⚔️' : '🛡️', title: orcs ? 'Armies of Mordor' : 'The Last Alliance' },
+      prompt: orcs ? `${fm(a)} orcs march from Mordor and ${fm(b)} more join them at the Black Gate. How many orcs in all?` : `The Last Alliance gathered ${fm(a + b)} soldiers. ${fm(b)} were lost in battle. How many were left?`, answer: orcs ? a + b : a,
+      hints: [orcs ? 'Add the two armies.' : 'Subtract those who were lost.'], explanation: orcs ? `${fm(a)} + ${fm(b)} = ${fm(a + b)}.` : `${fm(a + b)} − ${fm(b)} = ${fm(a)}.` });
+  }
+  if (topic === 'area' && (mode === 'story' || chance(0.4))) {
+    const w = rand(by(8, 14, 25), by(14, 30, 60)); const h = rand(by(6, 10, 18), by(12, 24, 40)); const askP = chance(0.5);
+    return typed({ key: `me9:area:${w}:${h}:${askP}`, topic, story: { emoji: '🏰', title: 'Minas Tirith' }, prompt: askP ? `A courtyard in Minas Tirith is ${w} meters long and ${h} meters wide. How many meters of wall go all the way around it?` : `A courtyard in Minas Tirith is ${w} meters long and ${h} meters wide. What is its area in square meters?`,
+      visual: { type: 'rect', w, h, unit: 'm' }, answer: askP ? 2 * (w + h) : w * h, hints: [askP ? 'Add all four sides.' : 'Area = length × width.'], explanation: askP ? `2 × (${w} + ${h}) = ${2 * (w + h)} m.` : `${w} × ${h} = ${fm(w * h)} square meters.` });
+  }
+  if (topic === 'money' && mode === 'story') {
+    const n = by(rand(3, 9), rand(6, 12), rand(12, 24)); const p = by(rand(2, 9), rand(8, 19), rand(15, 39));
+    return typed({ key: `me9:money:${n}:${p}`, topic, story: { emoji: '🍺', title: 'The Green Dragon Inn' }, prompt: `At the Green Dragon Inn, a mug of ale costs ${p} copper pennies. A table of hobbits orders ${n} mugs. How many copper pennies in all?`, answer: n * p, hints: [`${n} × ${p}`], explanation: `${n} × ${p} = ${n * p} copper pennies.` });
+  }
+  if (topic === 'time' && (mode === 'story' || mode === 'worksheet')) {
+    const h = rand(1, 11); const m = 5 * rand(0, 11); const dur = by(5 * rand(6, 17), 5 * rand(17, 47), 5 * rand(30, 100)); const dd = dur % 60 === 0 ? dur + 5 : dur; const t = h * 60 + m + dd; const eh = ((Math.floor(t / 60) - 1) % 12) + 1; const em = t % 60;
+    const ts = (x, y) => `${x}:${String(y).padStart(2, '0')}`;
+    return typed({ key: `me9:time:${h}:${m}:${dd}`, topic, story: { emoji: '🥾', title: 'The Long Walk' }, prompt: `Frodo and Sam set out at ${ts(h, m)} and rest at ${ts(eh, em)}. How many minutes did they walk?`, answer: dd, hints: ['Count the hours first, then the extra minutes.'], explanation: `From ${ts(h, m)} to ${ts(eh, em)} is ${dd} minutes.` });
+  }
+  if (topic === 'fracops' && mode === 'story') {
+    const den = pick(by([3, 4, 5, 6], [5, 6, 8, 10], [8, 10, 12])); const a = rand(1, den - 2); const b = rand(1, den - 1 - a); const three = d === 'challenge'; const c3 = three ? rand(1, Math.max(1, den - a - b)) : 0; const total = a + b + c3; const dname = { 3: 'thirds', 4: 'fourths', 5: 'fifths', 6: 'sixths', 8: 'eighths', 10: 'tenths', 12: 'twelfths' }[den];
+    return typed({ key: `me9:fo:${a}:${b}:${c3}:${den}`, topic, story: { emoji: '🍃', title: 'Lembas Bread' }, prompt: three ? `Sam eats [[${a}/${den}]] of a lembas loaf, Merry eats [[${b}/${den}]], and Pippin eats [[${c3}/${den}]] of the same loaf. How many ${dname} of the loaf did they eat together?` : `Sam eats [[${a}/${den}]] of a lembas loaf and Merry eats [[${b}/${den}]] of the same loaf. How many ${dname} of the loaf did they eat together?`, answer: total, hints: ['Same-size pieces: add the tops.'], explanation: `${three ? `${a} + ${b} + ${c3}` : `${a} + ${b}`} = ${total}, so they ate ${total} of the ${den} pieces.` });
+  }
+  if (topic === 'measure' && mode === 'story') {
+    const km = by(rand(2, 9), rand(10, 40), rand(20, 90)); const m = by(0, rand(1, 9) * 100, rand(1, 9) * 100 + rand(1, 9) * 10);
+    return typed({ key: `me9:me:${km}:${m}`, topic, story: { emoji: '🗺️', title: 'The Road Goes Ever On' }, prompt: `The road from Bag End to Bree is ${km} kilometers${m ? ` ${m} meters` : ''} long. How many meters is that?`, answer: km * 1000 + m, hints: ['1 kilometer = 1,000 meters.'], explanation: `${km} × 1,000 = ${fm(km * 1000)}${m ? `, plus ${m} = ${fm(km * 1000 + m)}` : ''} meters.` });
+  }
+  if (topic === 'factors' && mode === 'story') {
+    const [a, b] = pick(by([[3, 4], [4, 6], [2, 5]], [[6, 8], [4, 10], [8, 12], [6, 9]], [[9, 12], [10, 15], [12, 18], [8, 14]]));
+    const g = gcd(a, b); const l = (a * b) / g;
+    return typed({ key: `me9:fa:${a}:${b}`, topic, story: { emoji: '🕯️', title: 'Beacons of Gondor' }, prompt: `One beacon on the hills of Gondor is lit every ${a} nights, and another every ${b} nights. Both are lit tonight. In how many nights will both be lit together again?`, answer: l, hints: [`List the multiples of ${a} and of ${b}.`], explanation: `The smallest number that is a multiple of both ${a} and ${b} is ${l}.` });
+  }
+  return null;
+}
+
+export const THEMED = { 3: themed3, 4: themed4, 5: themed5, 6: themed6, 7: themed7, 8: themed8, 9: themed9, 12: themed12 };

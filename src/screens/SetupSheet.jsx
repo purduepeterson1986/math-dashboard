@@ -43,7 +43,7 @@ export default function SetupSheet({ curriculum, mode, saved, child, onNotMe, on
             <h2 className="text-2xl font-black text-ink">{m.label}</h2>
             <p className="text-ink-soft font-semibold text-sm">{m.blurb}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="press ml-auto w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center"><X size={22} /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="press ml-auto w-12 h-12 shrink-0 rounded-2xl bg-slate-100 flex items-center justify-center"><X size={22} /></button>
         </div>
 
         <div className="flex-1 scroll-y px-6 pb-4 space-y-5">

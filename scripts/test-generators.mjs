@@ -7,6 +7,11 @@ import { toSpeech } from '../src/lib/audio.js';
 import { THEMED } from '../src/curriculum/middleEarth.js';
 import { auditLevels } from './level-audit-lib.mjs';
 import { auditLadder } from './ladder-audit-lib.mjs';
+import { readFileSync } from 'node:fs';
+
+// Every picture type a question asks for must exist in Visual.jsx (an unknown type renders as a blank space).
+const VIS_SRC = readFileSync(new URL('../src/components/Visual.jsx', import.meta.url), 'utf8');
+const KNOWN_VISUALS = new Set([...VIS_SRC.matchAll(/(?:case|type ===) '([a-z0-9]+)'/gi)].map((m) => m[1]));
 
 const MODES = ['flash', 'worksheet', 'story', 'stem'];
 let failures = 0;
@@ -28,6 +33,7 @@ for (const [age, cur] of Object.entries(CURRICULA)) {
           const text = [q.prompt, q.display, q.explanation, q.answerLabel, ...(q.hints || []), ...(q.choices || []).map((c) => c.text || '')].join(' ');
           if (BAD.test(text)) fail(`bad text ${age}/${topic.id}/${mode}/${diff}`, q);
           if (!q.prompt && !q.display) fail('no prompt', q);
+          for (const vz of [q.visual, ...(q.choices || []).map((c) => c.visual)]) if (vz && !KNOWN_VISUALS.has(vz.type)) fail(`unknown visual type ${vz.type} ${age}/${topic.id}`, q);
           if (q.answerLabel === undefined || q.answerLabel === null || q.answerLabel === '') fail(`no answer label ${age}/${topic.id}`, q);
           { const m = /value of the (\d) in ([\d,]+)/i.exec(q.prompt || ''); if (m && m[2].replace(/,/g, '').split(m[1]).length > 2) fail(`ambiguous digit ${age}/${topic.id}`, q); }
           if (q.input === 'choice') {
@@ -35,7 +41,13 @@ for (const [age, cur] of Object.entries(CURRICULA)) {
             if (!q.choices.some((c) => c.id === q.answer)) fail('answer not in choices', q);
             const texts = q.choices.map((c) => c.text).filter(Boolean);
             if (new Set(texts).size !== texts.length) fail(`duplicate choice text ${topic.id}`, q);
-            const vals = texts.map((t) => { const m = t.match(/^\[\[(\d+)\/(\d+)\]\]$/); return m ? Number(m[1]) / Number(m[2]) : null; }).filter((v) => v !== null);
+            // Two options with the same VALUE are both right: fractions, mixed numbers (3 [[7/6]] = 4 [[1/6]]), decimals, money
+            const textValue = (t) => {
+              let m = t.match(/^\[\[(\d+)\/(\d+)\]\]$/); if (m) return Number(m[1]) / Number(m[2]);
+              m = t.match(/^(\d+) \[\[(\d+)\/(\d+)\]\]$/); if (m) return Number(m[1]) + Number(m[2]) / Number(m[3]);
+              m = t.replace(/[$,]/g, '').match(/^-?\d+(\.\d+)?$/); return m ? Number(m[0]) : null;
+            };
+            const vals = texts.map(textValue).filter((v) => v !== null);
             if (new Set(vals.map((v) => v.toFixed(9))).size !== vals.length) fail(`equal-value fraction choices ${age}/${topic.id}`, q);
             if (!checkAnswer(q.answer, q)) fail('choice self-check', q);
             if (q.choices.every((c) => !c.text)) {

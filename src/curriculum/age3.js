@@ -6,6 +6,7 @@
 import { rand, pick, sample, shuffle, chance, distinctInts } from '../lib/rng.js';
 import { COLORS, NAMES, makeChoices, plural, distinctShape } from './shared.js';
 import { themed3, middleEarthOn, THEME_RATE } from './middleEarth.js';
+import { extraFor } from './extraWire.js';
 
 const CRITTERS = [
   { e: '🐶', one: 'puppy', many: 'puppies' }, { e: '🐱', one: 'kitty', many: 'kitties' },
@@ -406,11 +407,12 @@ export default {
     { id: 'compare', label: 'More or Fewer', group: 'Numbers', icon: 'Scale', modes: ALL },
     { id: 'shapes', label: 'Shape Recognition', group: 'Shapes & Sizes', icon: 'Shapes', modes: ALL },
     { id: 'size', label: 'Size Comparison', group: 'Shapes & Sizes', icon: 'Ruler', modes: ALL },
+    { id: 'position', label: 'Position Words', group: 'Shapes & Sizes', icon: 'Move', modes: ALL },
     { id: 'patterns', label: 'Simple Patterns', group: 'Shapes & Sizes', icon: 'Repeat', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
-    { id: 'gentle', label: 'Gentle', detail: 'Numbers to 5 (a peek at 6), AB patterns, 2–3 choices' },
-    { id: 'ready', label: 'Ready', detail: 'Numbers to 10, one more / one less, AAB & ABB patterns' },
+    { id: 'gentle', label: 'Warm-up', detail: 'Numbers to 5 (a peek at 6), AB patterns, 2–3 choices' },
+    { id: 'ready', label: 'Standard', detail: 'Numbers to 10, one more / one less, AAB & ABB patterns' },
     { id: 'stretch', label: 'Stretch', detail: 'Add & take away within 10, teens, ABC & AABB patterns, odd-one-out' },
   ],
   defaultDifficulty: 'ready',
@@ -431,6 +433,8 @@ export default {
       const themed = themed3(mode, topic, d);
       if (themed) return themed;
     }
+    const extra = extraFor(3, mode, topic, d);
+    if (extra) return extra;
     switch (topic) {
       case 'count5': return counting('count5', mode, d, ...(d === 'gentle' ? [1, 3] : d === 'ready' ? [2, 5] : [4, 5]));
       case 'count10': return counting('count10', mode, d, ...(d === 'gentle' ? [5, 6] : d === 'ready' ? [6, 8] : [8, 10]));

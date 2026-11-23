@@ -12,14 +12,14 @@ export const FAMILY = {
   shapes: 'shapes', geometry: 'shapes',
   graphs: 'data', data: 'data',
   add: 'add', sub: 'sub', compare: 'compare', skip: 'skip', time: 'time', money: 'money', measure: 'measure',
-  fractions: 'fractions', placevalue: 'placevalue', patterns: 'patterns', bonds: 'bonds', mul: 'mul', div: 'div',
+  fractions: 'fractions', placevalue: 'placevalue', rounding: 'placevalue', patterns: 'patterns', bonds: 'bonds', mul: 'mul', div: 'div',
 };
 // Only these families get findings: for the others (shapes, patterns, skip counting, graphs, measuring, time)
 // the size of the numbers says little about difficulty, so they are listed in the table but never flagged.
 export const NUMERIC = new Set(['counting', 'compare', 'add', 'sub', 'bonds', 'placevalue', 'mul', 'div', 'money']);
 // Difficulty score of one number: whole digits, plus a digit for each decimal place (0.25 is harder than 25 to a child)
 const score = (tok) => { const [w, f = ''] = tok.split('.'); return (w === '0' ? 0 : w.length) + (f ? 1 + f.length * 0.8 : 0); };
-const tokens = (q) => [q.prompt, q.display, q.answerLabel].join(' ').replace(/(\d),(\d{3})/g, '$1$2').match(/\d+(\.\d+)?/g) || [];
+const tokens = (q) => [q.prompt, q.display, q.answerLabel].join(' ').replace(/(\d),(?=\d{3})/g, '$1').match(/\d+(\.\d+)?/g) || [];
 const maxNum = (q) => Math.max(0, ...tokens(q).map(score));
 const MODES = ['flash', 'worksheet', 'story', 'stem'];
 

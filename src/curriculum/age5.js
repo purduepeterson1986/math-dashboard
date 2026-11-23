@@ -9,6 +9,9 @@
 import { rand, pick, sample, shuffle, chance, distinctInts } from '../lib/rng.js';
 import { COLORS, NAMES, makeChoices, plural, distinctShape } from './shared.js';
 import { themed5, middleEarthOn, THEME_RATE } from './middleEarth.js';
+import { extraFor } from './extraWire.js';
+import { patterns as A3patterns } from './age3.js';
+import { growPattern, numberRule } from './extraEarly.js';
 
 const THINGS = [
   { e: '🍎', one: 'apple', many: 'apples' }, { e: '⭐', one: 'star', many: 'stars' },
@@ -431,10 +434,12 @@ export default {
     { id: 'measure', label: 'Measure & Compare', group: 'Shapes, Measuring & Time', modes: ['worksheet', 'story', 'stem'] },
     { id: 'sorting', label: 'Sorting & Classifying', group: 'Shapes, Measuring & Time', modes: ['worksheet', 'story', 'stem'] },
     { id: 'time', label: 'Telling Time', group: 'Shapes, Measuring & Time', modes: ['worksheet', 'story', 'stem'] },
+    { id: 'position', label: 'Position Words', group: 'Shapes, Measuring & Time', modes: ALL },
+    { id: 'patterns', label: 'Patterns', group: 'Numbers', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
     { id: 'gentle', label: 'Warm-up', detail: 'Count to 10, add within 6 & subtract within 8, 10 and a few more, o’clock' },
-    { id: 'ready', label: 'Advanced', detail: 'Count to 20, teen numbers, make 10, skip count by 2s/5s/10s, half hours' },
+    { id: 'ready', label: 'Standard', detail: 'Count to 20, teen numbers, make 10, skip count by 2s/5s/10s, half hours' },
     { id: 'stretch', label: 'Stretch', detail: '1st-grade reach: within 20, tens & ones to 99, < > =, inches, shape riddles, half an hour later' },
   ],
   defaultDifficulty: 'ready',
@@ -455,6 +460,8 @@ export default {
       const themed = themed5(mode, topic, d);
       if (themed) return themed;
     }
+    const extra = extraFor(5, mode, topic, d);
+    if (extra) return extra;
     switch (topic) {
       case 'count20': return count20(mode, d);
       case 'teens': return teens(mode, d);
@@ -467,6 +474,7 @@ export default {
       case 'measure': return measure(mode, d);
       case 'sorting': return sorting(mode, d);
       case 'time': return time(mode, d);
+      case 'patterns': return d === 'gentle' ? A3patterns(mode, 'ready') : d === 'ready' ? (chance(0.6) ? A3patterns(mode, 'stretch') : growPattern(mode, 1)) : (chance(0.4) ? A3patterns(mode, 'stretch') : chance(0.5) ? growPattern(mode, 2) : numberRule(mode, 1, 30));
       default: return null;
     }
   },

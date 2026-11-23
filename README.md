@@ -1,7 +1,7 @@
 # Lumen Math Lab
 
 An iPad-first homeschool math & STEM dashboard (React + Vite + Tailwind CSS + Lucide).
-Ages 3–8 and 12 are fully built; the other ages show a "coming soon" module and plug in
+Ages 3–9 and 12 are fully built; the other ages show a "coming soon" module and plug in
 by adding `src/curriculum/ageN.js` (see `PLAN.md` for the contract).
 
 ## Run locally

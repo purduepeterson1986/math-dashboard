@@ -1077,7 +1077,7 @@ export default {
   ],
   difficulties: [
     { id: 'easy', label: 'Warm-up', detail: 'Facts to 12×12, 2–3 digit numbers, one-step equations, simple fractions' },
-    { id: 'standard', label: 'Advanced', detail: '4-digit & decimal operations, unlike denominators, two-step equations, percents' },
+    { id: 'standard', label: 'Standard', detail: '4-digit & decimal operations, unlike denominators, two-step equations, percents' },
     { id: 'challenge', label: 'Challenge', detail: 'Grade 7–8 reach: variables on both sides, percent change, compound probability, slope' },
   ],
   defaultDifficulty: 'standard',

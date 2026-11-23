@@ -91,3 +91,17 @@ export async function importData(file, current) {
   const merged = [...byId.values()].sort((a, b) => b.startedAt - a.startedAt);
   return { merged, added };
 }
+
+/** How full the browser's saved-data space is. Browsers allow roughly 5 MB per site (counted as 2 bytes per character in Safari),
+ *  so this uses a cautious 2.5 million characters as "full". Only this app's own keys are counted. */
+export const STORAGE_LIMIT_CHARS = 2_500_000;
+export function storageUsage() {
+  let used = 0;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith('lumen.')) used += k.length + (window.localStorage.getItem(k) || '').length;
+    }
+  } catch { /* ignore */ }
+  return { used, limit: STORAGE_LIMIT_CHARS, pct: Math.min(100, Math.round((used / STORAGE_LIMIT_CHARS) * 100)) };
+}

@@ -10,6 +10,7 @@
 import * as A7 from './age7.js';
 import { retopic, makeChoices, NAMES } from './shared.js';
 import { themed8, middleEarthOn, THEME_RATE } from './middleEarth.js';
+import { extraFor } from './extraWire.js';
 import { rand, pick, sample, shuffle, chance, gcd } from '../lib/rng.js';
 
 const L = (d) => (d === 'easy' || d === 'challenge' ? d : 'standard');
@@ -306,10 +307,11 @@ export default {
     { id: 'time', label: 'Time & Elapsed Time', group: 'Measurement & Data', modes: ['flash', 'worksheet', 'story', 'stem'] },
     { id: 'mass', label: 'Mass & Liquid Volume', group: 'Measurement & Data', modes: ['worksheet', 'story'] },
     { id: 'data', label: 'Scaled Graphs', group: 'Measurement & Data', modes: ['worksheet', 'stem'] },
+    { id: 'money', label: 'Money & Change', group: 'Measurement & Data', modes: ['flash', 'worksheet', 'story', 'stem'] },
   ],
   difficulties: [
     { id: 'easy', label: 'Warm-up', detail: '× and ÷ by 2, 3, 4, 5, 10; halves to fourths; count square units' },
-    { id: 'standard', label: 'Advanced', detail: 'All facts to 10 × 10, fractions on a number line, area & perimeter, elapsed time' },
+    { id: 'standard', label: 'Standard', detail: 'All facts to 10 × 10, fractions on a number line, area & perimeter, elapsed time' },
     { id: 'challenge', label: 'Challenge', detail: '4th-grade reach: facts to 12, × by tens, equivalent fractions, L-shapes, 4-digit adding & subtracting, rounding to 100,000' },
   ],
   defaultDifficulty: 'standard',
@@ -330,6 +332,8 @@ export default {
       const themed = themed8(mode, topic, d);
       if (themed) return themed;
     }
+    const extra = extraFor(8, mode, topic, d);
+    if (extra) return extra;
     switch (topic) {
       case 'mul': return mul(mode, d);
       case 'div': return div(mode, d);

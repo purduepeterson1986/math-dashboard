@@ -10,6 +10,7 @@
 import { rand, pick, sample, shuffle, chance, distinctInts } from '../lib/rng.js';
 import { NAMES, makeChoices, distinctShape } from './shared.js';
 import { themed7, middleEarthOn, THEME_RATE } from './middleEarth.js';
+import { extraFor } from './extraWire.js';
 
 const L = (d) => (d === 'easy' || d === 'challenge' ? d : 'standard');
 const by = (d, e, s, c) => (d === 'easy' ? e : d === 'challenge' ? c : s);
@@ -446,10 +447,11 @@ export default {
     { id: 'fractions', label: 'Fractions', group: 'Shapes & Fractions', modes: ['worksheet', 'stem'] },
     { id: 'geometry', label: 'Shapes & Attributes', group: 'Shapes & Fractions', modes: ['worksheet', 'stem'] },
     { id: 'puzzles', label: 'Number Puzzles', group: 'Shapes & Fractions', modes: ['stem'] },
+    { id: 'patterns', label: 'Patterns & Rules', group: 'Number Sense', modes: ['worksheet', 'story', 'stem'] },
   ],
   difficulties: [
     { id: 'easy', label: 'Warm-up', detail: '2-digit adding & subtracting, quarter hours, coins to 99¢, halves/thirds/fourths' },
-    { id: 'standard', label: 'Advanced', detail: '3-digit regrouping, × facts 2–5 & 10, time to 5 minutes, quarters, making change' },
+    { id: 'standard', label: 'Standard', detail: '3-digit regrouping, × facts 2–5 & 10, time to 5 minutes, quarters, making change' },
     { id: 'challenge', label: 'Challenge', detail: '3rd-grade reach: across zeros, rounding, × & ÷ to 9s, elapsed time, fraction of a set' },
   ],
   defaultDifficulty: 'standard',
@@ -470,6 +472,8 @@ export default {
       const themed = themed7(mode, topic, d);
       if (themed) return themed;
     }
+    const extra = extraFor(7, mode, topic, d);
+    if (extra) return extra;
     switch (topic) {
       case 'add': return addition(mode, d);
       case 'sub': return subtraction(mode, d);

@@ -58,7 +58,7 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
         const fl = flags.has(i);
         return (
           <button key={qq.id} type="button" onClick={() => go(i)} aria-label={`Problem ${i + 1}${has ? ', answered' : ''}${fl ? ', flagged' : ''}`}
-            className={`press relative w-12 h-12 rounded-xl font-extrabold tabular border-2 ${cur ? 'border-brand-600 bg-brand-600 text-white' : has ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft'}`}>
+            className={`press relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl font-extrabold tabular border-2 ${cur ? 'border-brand-600 bg-brand-600 text-white' : has ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft'}`}>
             {i + 1}
             {has && <span className={`absolute bottom-0.5 right-0.5 ${cur ? 'text-white' : 'text-good'}`} aria-hidden="true"><Check size={12} strokeWidth={4} /></span>}
             {fl && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-warn text-white flex items-center justify-center"><Flag size={11} strokeWidth={3} /></span>}
@@ -141,11 +141,6 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
     return idx < count - 1 ? go(idx + 1) : toReview();
   };
 
-  const onPickAndAdvance = (v) => {
-    setAnswer(v);
-    if (big && q.input !== 'keypad' && idx < count - 1) setTimeout(() => go(idx + 1), 450);
-  };
-
   return (
     <PlayShell
       level={`Age ${curriculum.age} · ${(curriculum.difficulties.find((x) => x.id === (config.difficulty || curriculum.defaultDifficulty)) || {}).label || ''}`}
@@ -164,7 +159,7 @@ export default function Worksheet({ curriculum, config, onFinish, onExit, settin
       )}
       dock={(
         <>
-          <AnswerPanel q={q} value={answers[idx]} onChange={big ? onPickAndAdvance : setAnswer} instant={false} big={big} simple={simple}
+          <AnswerPanel q={q} value={answers[idx]} onChange={setAnswer} instant={false} big={big} simple={simple}
             onSubmit={goNext} submitLabel={atEnd ? 'Review' : 'Next'} compact />
           {q.input !== 'keypad' && (
             // Picture / choice / tap-a-number questions get the same Next button the keypad has: greyed out until something is picked

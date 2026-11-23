@@ -66,6 +66,9 @@ function describe(v) {
     case 'tape': return `tape diagram: ${v.parts.map((p) => `${p.label} ${p.units}`).join(', ')}, total ${v.total}`;
     case 'rect': return `rectangle ${v.w} by ${v.h} ${v.unit || ''}`;
     case 'bars': return `bars: ${v.values.join(', ')}`;
+    case 'angle': return `angle drawing${v.flip ? ' (opening to the left)' : ''}: ${v.parts.map((p) => `${p.deg}°${p.label ? ` labeled "${p.label}"` : ' (no label)'}`).join(' next to ')}${v.parts.reduce((s, p) => s + p.deg, 0) === 180 ? ', on a straight line' : ''}`;
+    case 'linepair': return `two lines drawn ${v.kind === 'parallel' ? 'side by side, never meeting' : v.kind === 'perpendicular' ? 'crossing at a square corner (marked)' : 'crossing at a slant'}`;
+    case 'lshape': return `L-shaped figure: ${v.W} by ${v.H} ${v.unit || ''} with a ${v.cw} by ${v.ch} corner cut out`;
     default: return `picture (${v.type})`;
   }
 }

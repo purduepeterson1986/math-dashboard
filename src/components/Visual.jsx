@@ -304,7 +304,7 @@ const dim = { fontSize: 15, fontWeight: 800, fill: '#1d2140' };
 
 function Geometry({ v }) {
   if (v.type === 'rect') {
-    const ar = v.w / v.h; const W = ar >= 1 ? 240 : 240 * ar; const H = ar >= 1 ? 240 / ar : 240;
+    const ar = v.w / v.h; const W = ar >= 1 ? 200 : 200 * ar; const H = ar >= 1 ? 200 / ar : 200;
     const w = Math.max(W, 80); const h = Math.min(Math.max(H, 60), 150);
     return (
       <Figure label="rectangle"><rect x={160 - w / 2} y={100 - h / 2} width={w} height={h} fill="#e0e3ff" stroke="#5b5ff0" strokeWidth="3" rx="2" />
@@ -353,6 +353,44 @@ function Geometry({ v }) {
         <text x={x0 - 8} y={y0 + H / 2} textAnchor="end" {...dim}>{v.H}</text>
         <text x={x0 + W - cw / 2} y={y0 - 6} textAnchor="middle" {...dim} fontSize="12">{v.cw}</text>
         <text x={x0 + W + 6} y={y0 + ch / 2 + 4} {...dim} fontSize="12">{v.ch}</text>
+      </Figure>
+    );
+  }
+  if (v.type === 'angle') {
+    const parts = v.parts; const total = parts.reduce((t, x) => t + x.deg, 0); const sgn = v.flip ? -1 : 1;
+    const wide = total > 120; const cx = wide ? 160 : v.flip ? 240 : 80; const cy = 175; const R = wide ? 130 : 140;
+    const pt = (deg, r) => [cx + sgn * r * Math.cos((deg * Math.PI) / 180), cy - r * Math.sin((deg * Math.PI) / 180)];
+    const bounds = parts.reduce((acc, x) => [...acc, acc[acc.length - 1] + x.deg], [0]);
+    const colors = ['#f59e0b', '#10b981', '#ec4899'];
+    return (
+      <Figure label={`angle of ${total} degrees`} h={200}>
+        {total === 180 && <line x1={pt(180, R)[0]} y1={pt(180, R)[1]} x2={pt(0, R)[0]} y2={pt(0, R)[1]} stroke="#4a49d9" strokeWidth="4" strokeLinecap="round" />}
+        {bounds.map((b, i) => <line key={i} x1={cx} y1={cy} x2={pt(b, R)[0]} y2={pt(b, R)[1]} stroke="#4a49d9" strokeWidth="4" strokeLinecap="round" />)}
+        {parts.length === 1 && total === 90 && <polyline points={`${pt(0, 22)[0]},${pt(0, 22)[1]} ${cx + sgn * 22},${cy - 22} ${pt(90, 22)[0]},${pt(90, 22)[1]}`} fill="none" stroke="#f59e0b" strokeWidth="3" />}
+        {!(parts.length === 1 && total === 90) && parts.map((x, i) => {
+          const r = 34 + i * 6; const [x0, y0] = pt(bounds[i], r); const [x1, y1] = pt(bounds[i + 1], r);
+          return <path key={i} d={`M${x0},${y0} A${r},${r} 0 0 ${v.flip ? 1 : 0} ${x1},${y1}`} fill="none" stroke={colors[i % 3]} strokeWidth="3.5" />;
+        })}
+        {parts.map((x, i) => {
+          if (!x.label) return null;
+          const mid = (bounds[i] + bounds[i + 1]) / 2; const [tx, ty] = pt(mid, 78 + (x.deg < 30 ? 16 : 0));
+          return <text key={i} x={tx} y={ty + 5} textAnchor="middle" {...dim} fill={x.label === '?' ? '#e0444e' : '#1d2140'} fontSize={x.label === '?' ? 22 : 16}>{x.label}</text>;
+        })}
+        <circle cx={cx} cy={cy} r="4.5" fill="#4a49d9" />
+      </Figure>
+    );
+  }
+  if (v.type === 'linepair') {
+    const rot = v.rot || 0; const kind = v.kind;
+    const L = 86;
+    const lines = kind === 'parallel' ? [[-L, -30, L, -30], [-L, 30, L, 30]] : kind === 'perpendicular' ? [[-L, 0, L, 0], [0, -L * 0.8, 0, L * 0.8]]
+      : [[-L, 0, L, 0], [-L * Math.cos(1.0), L * Math.sin(1.0), L * Math.cos(1.0), -L * Math.sin(1.0)]];
+    return (
+      <Figure label={`${kind} lines`} h={200}>
+        <g transform={`translate(160 100) rotate(${rot})`}>
+          {lines.map((l, i) => <line key={i} x1={l[0]} y1={l[1]} x2={l[2]} y2={l[3]} stroke={i ? '#e0444e' : '#4a49d9'} strokeWidth="5" strokeLinecap="round" />)}
+          {kind === 'perpendicular' && <polyline points="14,0 14,-14 0,-14" fill="none" stroke="#f59e0b" strokeWidth="3" />}
+        </g>
       </Figure>
     );
   }
@@ -424,6 +462,15 @@ export default function Visual({ v, size = 'lg' }) {
           {v.blank && <div className="w-16 h-16 flex items-center justify-center rounded-xl border-4 border-dashed border-brand-400 bg-brand-50 text-3xl font-black text-brand-500">?</div>}
         </div>
       );
+    case 'layout': return (
+      <div className="inline-flex flex-col items-center gap-2" role="img" aria-label="A row or column of pictures">
+        {v.rows.map((row, i) => (
+          <div key={i} className="flex items-center justify-center gap-4">
+            {row.map((e, j) => <span key={j} className="leading-none select-none" style={{ fontSize: size === 'lg' ? 68 : 52 }}>{e || '\u00A0'}</span>)}
+          </div>
+        ))}
+      </div>
+    );
     case 'balance': return <Balance v={v} />;
     case 'tape': return <Tape v={v} />;
     case 'grid': return <Grid v={v} />;

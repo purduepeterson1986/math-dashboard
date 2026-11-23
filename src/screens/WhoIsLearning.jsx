@@ -13,7 +13,7 @@ export default function WhoIsLearning({ profiles, onPick, onParent }) {
         <div className="flex items-center gap-3">
           <img src="./icon.svg" alt="" className="w-11 h-11 rounded-2xl shadow-md shadow-brand-600/20" />
           <div className="text-xl font-black tracking-tight text-ink">Lumen <span className="text-brand-600">Math Lab</span></div>
-          <button type="button" onClick={onParent} className="press ml-auto h-11 px-3 rounded-2xl text-ink-muted hover:text-ink-soft flex items-center gap-1.5 text-sm font-bold">
+          <button type="button" onClick={onParent} aria-label="Parent Portal" className="press ml-auto h-11 px-3 rounded-2xl text-ink-muted hover:text-ink-soft flex items-center gap-1.5 text-sm font-bold">
             <Lock size={16} /> <span className="hidden sm:inline">Parent Portal</span>
           </button>
         </div>
