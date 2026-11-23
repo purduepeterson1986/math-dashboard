@@ -12,7 +12,7 @@ import Runner from './modes/Runner.jsx';
 import { getCurriculum } from './curriculum/index.js';
 import { loadSettings, saveSettings } from './lib/storage.js';
 import {
-  loadProfiles, saveProfiles, loadProfileSessions, saveProfileSessions, deleteProfileSessions, newProfile,
+  loadProfiles, saveProfiles, withGuest, isGuest, loadProfileSessions, saveProfileSessions, deleteProfileSessions, newProfile,
   mergeSessions, exportFamily, readBackup, IDLE_MS, displayName, compactSessions,
 } from './lib/profiles.js';
 import { setSoundEnabled, setVoiceEnabled, unlockAudio, audioReady, stopSpeaking } from './lib/audio.js';
@@ -27,7 +27,7 @@ export default function App() {
   const [shared, setShared] = useState(() => { const { age, filters, studentName, ...rest } = loadSettings(); return rest; }); // eslint-disable-line no-unused-vars
   const [profiles, setProfiles] = useState(loadProfiles);
   // With one child the app opens straight to them; with several it asks "Who's learning?"
-  const [activeId, setActiveId] = useState(() => (profiles.length === 1 ? profiles[0].id : null));
+  const [activeId, setActiveId] = useState(() => (profiles.filter((p) => !isGuest(p)).length === 1 ? profiles[0].id : null));
   const [sessions, setSessions] = useState(() => (activeId ? loadProfileSessions(activeId) : []));
   const [view, setView] = useState({ name: 'home' });
   const [setupMode, setSetupMode] = useState(null);
@@ -66,7 +66,7 @@ export default function App() {
   // Back to "Who's learning?" after a quiet spell, so a sibling never works on the wrong profile.
   // Never in the middle of a lesson or while a parent is in the portal.
   const live = useRef({});
-  live.current = { multi, activeId, screen: view.name };
+  live.current = { multi: profiles.filter((p) => !isGuest(p)).length > 1, activeId, screen: view.name };
   const lastTouch = useRef(Date.now());
   useEffect(() => {
     const bump = () => { lastTouch.current = Date.now(); };
@@ -146,9 +146,9 @@ export default function App() {
 
   /* ------------------------------ children & backup ------------------------------ */
   const sessionsFor = (id) => (id === activeId ? sessions : loadProfileSessions(id));
-  const addChild = () => { const p = newProfile(profiles); setProfiles((l) => [...l, p]); return p.id; };
+  const addChild = () => { const p = newProfile(profiles); setProfiles((l) => withGuest([...l, p])); return p.id; };
   const removeChild = (id) => {
-    if (profiles.length < 2) return;
+    if (isGuest({ id }) || profiles.filter((p) => !isGuest(p)).length < 2) return;
     deleteProfileSessions(id);
     const rest = profiles.filter((p) => p.id !== id);
     setProfiles(rest);
@@ -165,7 +165,7 @@ export default function App() {
     }
     return changed;
   };
-  const exportAll = () => exportFamily(profiles.map((p) => ({ profile: p, sessions: sessionsFor(p.id) })), settings);
+  const exportAll = () => exportFamily(profiles.filter((p) => !isGuest(p)).map((p) => ({ profile: p, sessions: sessionsFor(p.id) })), settings);
   const importAll = async (file) => {
     const entries = await readBackup(file);
     let added = 0; let kids = 0; const known = new Set(profiles.map((p) => p.id)); const fresh = [];
@@ -176,7 +176,7 @@ export default function App() {
       added += n;
       if (id === activeId) setSessions(merged); else saveProfileSessions(id, merged);
     }
-    if (fresh.length) setProfiles((l) => [...l, ...fresh.map((p) => ({ avatar: '🌟', age: 3, filters: {}, name: '', ...p }))]);
+    if (fresh.length) setProfiles((l) => withGuest([...l, ...fresh.map((p) => ({ avatar: '🌟', age: 3, filters: {}, name: '', ...p })).filter((p) => !isGuest(p))]));
     return `Imported ${added} new session${added === 1 ? '' : 's'}${kids ? ` and ${kids} child profile${kids === 1 ? '' : 's'}` : ''}.`;
   };
 

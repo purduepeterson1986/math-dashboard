@@ -9,7 +9,7 @@ import Summary from './Summary.jsx';
 import { MathText } from '../components/Visual.jsx';
 import { CURRICULA, MODES, AGE_META, getCurriculum, modeById } from '../curriculum/index.js';
 import { masteryForAge, weakTopics, STATUS, formatDuration, practiceStreakDays, topicStats, levelStats } from '../lib/diagnostics.js';
-import { AVATARS, displayName, compactSessions } from '../lib/profiles.js';
+import { AVATARS, displayName, compactSessions, isGuest } from '../lib/profiles.js';
 import { CURRENT_VERSION, latestVersion, reloadFresh, useVersion } from '../lib/update.js';
 import { storageUsage } from '../lib/storage.js';
 import { topicsForMode } from '../lib/session.js';
@@ -399,21 +399,22 @@ function ChildrenCard({ profiles, activeId, sessionsFor, onSwitch, onAdd, onUpda
           const list = sessionsFor(p.id);
           const last = list[0];
           return (
-            <li key={p.id} className="py-3 flex flex-wrap items-center gap-3">
+            <li key={p.id} className="py-3 flex flex-wrap items-center gap-3 md:grid md:grid-cols-[3.5rem_minmax(0,1fr)_6.5rem_8rem_5.5rem_2.75rem]">
               <button type="button" aria-label={`Choose a picture for ${displayName(p, i)}`} onClick={() => setPick(p.id)}
                 className="press w-14 h-14 rounded-2xl bg-brand-50 text-4xl flex items-center justify-center">{p.avatar}</button>
-              <input value={p.name} maxLength={24} onChange={(e) => onUpdate(p.id, { name: e.target.value })} aria-label={`Name for child ${i + 1}`} placeholder={`Child ${i + 1}`}
-                className="flex-1 min-w-[9rem] h-12 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" />
+              {isGuest(p) ? <div className="flex-1 min-w-[9rem] h-12 px-4 flex items-center text-lg font-bold text-ink-soft md:flex-none">Guest <span className="ml-2 text-xs font-bold text-ink-muted">always available, for testing</span></div> : <input value={p.name} maxLength={24} onChange={(e) => onUpdate(p.id, { name: e.target.value })} aria-label={`Name for child ${i + 1}`} placeholder={`Child ${i + 1}`}
+                className="flex-1 min-w-[9rem] md:min-w-0 h-12 rounded-2xl border-2 border-line px-4 text-lg font-bold focus:border-brand-500 outline-none" />}
               <label className="text-xs font-extrabold text-ink-muted flex flex-col gap-0.5">Age
                 <select value={p.age} onChange={(e) => onUpdate(p.id, { age: Number(e.target.value) })} aria-label={`Age for ${displayName(p, i)}`}
-                  className="h-12 rounded-2xl border-2 border-line bg-white px-3 text-base font-bold text-ink focus:border-brand-500 outline-none">
+                  className="h-12 w-full rounded-2xl border-2 border-line bg-white px-3 text-base font-bold text-ink focus:border-brand-500 outline-none">
                   {Object.keys(AGE_META).map(Number).sort((a, b) => a - b).map((a) => <option key={a} value={a} disabled={!CURRICULA[a] && a !== p.age}>{a}{CURRICULA[a] ? '' : ' (coming soon)'}</option>)}
                 </select>
               </label>
-              <div className="text-xs font-bold text-ink-muted w-28">{list.length} session{list.length === 1 ? '' : 's'}<br />{last ? `Last: ${fmtDate(last.startedAt)}` : 'Not started yet'}</div>
-              {p.id === activeId ? <span className="px-3 min-h-11 rounded-xl bg-good-soft text-good font-extrabold flex items-center">Viewing</span>
+              <div className="text-xs font-bold text-ink-muted w-28 md:w-auto">{list.length} session{list.length === 1 ? '' : 's'}<br />{last ? `Last: ${fmtDate(last.startedAt)}` : 'Not started yet'}</div>
+              {p.id === activeId ? <span className="px-3 min-h-11 rounded-xl bg-good-soft text-good font-extrabold flex items-center justify-center">Viewing</span>
                 : <button type="button" onClick={() => onSwitch(p.id)} className="press min-h-11 px-4 rounded-xl bg-slate-100 font-extrabold">View</button>}
-              {profiles.length > 1 && <button type="button" onClick={() => setDel(p)} aria-label={`Remove ${displayName(p, i)}`} className="press w-11 h-11 rounded-xl bg-bad-soft text-bad flex items-center justify-center"><Trash2 size={18} /></button>}
+              {!isGuest(p) && profiles.filter((q) => !isGuest(q)).length > 1 && <button type="button" onClick={() => setDel(p)} aria-label={`Remove ${displayName(p, i)}`} className="press w-11 h-11 rounded-xl bg-bad-soft text-bad flex items-center justify-center"><Trash2 size={18} /></button>}
+              {!(!isGuest(p) && profiles.filter((q) => !isGuest(q)).length > 1) && <span className="hidden md:block" aria-hidden="true" />}
             </li>
           );
         })}
@@ -502,9 +503,9 @@ function SettingsTab({ settings, sessions, onSettings, onSessions, family }) {
       </Card>
       <StorageCard profiles={family.profiles} sessionsFor={family.sessionsFor} onCompact={family.onCompact} />
       <Card title="Backup & data" icon={<Download size={20} className="text-brand-600" />} className="lg:col-span-2">
-        <p className="text-ink-soft font-semibold mb-3">Progress for every child is saved in this browser on this device. Export a JSON backup regularly, especially before clearing Safari data.</p>
+        <p className="text-ink-soft font-semibold mb-3">Progress for every child is saved in this browser on this device. Export a backup regularly, especially before clearing Safari data.</p>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={family.onExportAll} className="press min-h-12 px-5 rounded-2xl bg-brand-600 text-white font-extrabold flex items-center gap-2"><Download size={18} /> Export JSON backup</button>
+          <button type="button" onClick={family.onExportAll} className="press min-h-12 px-5 rounded-2xl bg-brand-600 text-white font-extrabold flex items-center gap-2"><Download size={18} /> Export backup</button>
           <button type="button" onClick={() => file.current?.click()} className="press min-h-12 px-5 rounded-2xl bg-brand-50 text-brand-700 font-extrabold flex items-center gap-2"><Upload size={18} /> Import backup</button>
           <input ref={file} type="file" accept="application/json,.json" className="hidden" onChange={async (e) => {
             const f = e.target.files?.[0]; e.target.value = '';

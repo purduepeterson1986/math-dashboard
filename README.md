@@ -41,5 +41,5 @@ Progress saved in the offline copy is kept separately from the online site's pro
 ## Data
 
 Progress is stored in the browser's `localStorage` on each device (key `lumen.sessions.v1`).
-Use **Parent Portal → Settings → Export JSON backup** regularly; Import merges a backup back in.
+Use **Parent Portal → Settings → Export backup** regularly; Import merges a backup back in.
 The Parent Portal is gated by a grown-up math question, or a 4-digit PIN once one is set.

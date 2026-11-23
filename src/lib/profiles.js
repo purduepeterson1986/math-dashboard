@@ -12,14 +12,21 @@ export const AVATARS = ['🧙', '🧝', '🧑‍🌾', '🦅', '🐴', '🐉', '
 export const IDLE_MS = 15 * 60 * 1000; // back to "Who's learning?" after this long without a tap
 
 export const sessionKey = (id) => (id === 'p1' ? 'lumen.sessions.v1' : `lumen.sessions.${id}.v1`);
-export const displayName = (p, i = 0) => (p?.name || '').trim() || `Child ${i + 1}`;
+export const GUEST_ID = 'guest';
+export const isGuest = (p) => p?.id === GUEST_ID;
+export const displayName = (p, i = 0) => (isGuest(p) ? 'Guest' : (p?.name || '').trim() || `Child ${i + 1}`);
+/** Guest is a built-in student that is always there (handy for testing). It always sits last and can't be removed. */
+export function withGuest(list) {
+  const guest = list.find(isGuest) || { id: GUEST_ID, name: 'Guest', avatar: '🧪', age: 3, filters: {} };
+  return [...list.filter((p) => !isGuest(p)), guest];
+}
 
 export function loadProfiles() {
   const saved = safeGet(KEY_PROFILES, null);
-  if (saved && Array.isArray(saved.list) && saved.list.length) return saved.list;
+  if (saved && Array.isArray(saved.list) && saved.list.length) return withGuest(saved.list);
   // First launch of the profile version: the existing student becomes the first child
   const legacy = safeGet('lumen.settings.v1', {});
-  return [{ id: 'p1', name: legacy.studentName || '', avatar: AVATARS[0], age: Number(legacy.age) || 3, filters: legacy.filters || {} }];
+  return withGuest([{ id: 'p1', name: legacy.studentName || '', avatar: AVATARS[0], age: Number(legacy.age) || 3, filters: legacy.filters || {} }]);
 }
 export const saveProfiles = (list) => safeSet(KEY_PROFILES, { list });
 
@@ -41,6 +48,7 @@ export function compactSessions(list, keepFull = 60) {
 }
 
 export function newProfile(list) {
+  list = list.filter((p) => !isGuest(p));
   const used = new Set(list.map((p) => p.avatar));
   const avatar = AVATARS.find((a) => !used.has(a)) || AVATARS[list.length % AVATARS.length];
   const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
